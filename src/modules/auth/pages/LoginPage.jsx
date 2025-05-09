@@ -15,16 +15,22 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await login(email, password);
-    console.log('Login successful', response);
-    navigate('/home');  // Redirige a la página principal
-  } catch (err) {
-    setError(`Error en la autenticación: ${err.message}`);  // Ahora usamos 'err' para mostrar el mensaje
-  }
-  };
+    e.preventDefault();
 
+    // Validación básica antes de hacer la solicitud al backend
+    if (!email || !password) {
+      setError('Por favor ingresa tu correo y contraseña');
+      return;
+    }
+
+    try {
+      const response = await login(email, password);  // Llamamos al servicio de login
+      console.log('Login successful', response);
+      navigate('/home');  // Redirige a la página principal o dashboard
+    } catch (err) {
+      setError(`Error en la autenticación: ${err.message}`);  // Usamos 'err' para mostrar el mensaje
+    }
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
