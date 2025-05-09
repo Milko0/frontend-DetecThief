@@ -5,7 +5,7 @@ import { Box, Container, Stack } from '@mui/system';
 import TextField from '@mui/material/TextField';
 import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Asegúrate de tener la imagen en la carpeta correcta
 import { useNavigate } from "react-router-dom";
-import { supabase } from '../../../utils/supabaseClient.js'; // Importamos el cliente de Supabase
+import { supabase } from '../../../supabaseClient.js'; // Importamos el cliente de Supabase
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');

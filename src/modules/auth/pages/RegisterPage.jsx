@@ -1,65 +1,93 @@
-// src/modules/auth/components/RegisterForm.jsx
+// src/modules/auth/pages/RegisterPage.jsx
 import React, { useState } from 'react';
-import { Button, Typography } from "@mui/material";
+import { Button, Typography, TextField, Container } from "@mui/material";
 import { Box, Stack } from '@mui/system';
-import TextField from '@mui/material/TextField';
-import { register } from '../services/authService'; // Importamos la función register
+import { supabase } from '../../../supabaseClient'; // Asegúrate de tener tu cliente Supabase configurado
 
-const RegisterForm = () => {
+const RegisterPage = () => {
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState('user');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  
+
   const handleRegister = async (e) => {
     e.preventDefault();
 
-    // Validación básica
-    if (!email || !password) {
-      setError('Por favor ingresa un correo y una contraseña');
+    if (!username || !email || !firstName || !lastName) {
+      setError('Por favor, completa todos los campos.');
       return;
     }
 
     try {
-      const response = await register(email, password);  // Llamamos al servicio de registro
-      setSuccess('Usuario registrado exitosamente');
-      setError('');
-      console.log('Registro exitoso', response);
+      // Genera una contraseña aleatoria segura (solo para uso interno de Supabase)
+      const randomPassword = crypto.randomUUID();
+
+      // Registro con Supabase Auth
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password: randomPassword,
+      });
+
+      if (signUpError) {
+        setError(signUpError.message);
+        setSuccess('');
+        return;
+      }
+
+      // Guarda los datos adicionales en tu backend
+      const response = await fetch('http://localhost:8080/api/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          supabaseId: data.user.id,
+          username,
+          email,
+          firstName,
+          lastName,
+          role,
+        }),
+      });
+
+      if (response.ok) {
+        setSuccess('Usuario registrado exitosamente. Revisa tu correo.');
+        setError('');
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Error al guardar en backend');
+        setSuccess('');
+      }
     } catch (err) {
-      setError(`Error en el registro: ${err.message}`);
+      setError(`Error inesperado: ${err.message}`);
+      setSuccess('');
     }
   };
 
   return (
-    <Box sx={{ height: '400px', width: '450px', mx: 4 }}>
-      <Stack onSubmit={handleRegister} component='form' direction="column" spacing={3}>
-        <Typography variant="h4" sx={{ textAlign: "center" }}>Registro</Typography>
-        <TextField
-          name="email"
-          label="Correo electrónico"
-          variant="outlined"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          fullWidth
-        />
-        <TextField
-          name="password"
-          type="password"
-          label="Contraseña"
-          variant="outlined"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          fullWidth
-        />
-        <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Registrarme</Button>
-      </Stack>
+    <Container maxWidth="xs" sx={{ textAlign: 'center', marginTop: '50px' }}>
+      <Typography variant="h4" sx={{ marginBottom: '20px' }}>
+        Registro de Usuario
+      </Typography>
 
-      {/* Mostrar mensaje de error si existe */}
-      {error && <Typography sx={{ color: 'red', textAlign: 'center' }}>{error}</Typography>}
-      {/* Mostrar mensaje de éxito si el registro fue exitoso */}
-      {success && <Typography sx={{ color: 'green', textAlign: 'center' }}>{success}</Typography>}
-    </Box>
+      <Box sx={{ width: '100%' }}>
+        <Stack onSubmit={handleRegister} component="form" direction="column" spacing={3}>
+          <TextField label="Nombre de usuario" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth />
+          <TextField label="Correo electrónico" value={email} type="email" onChange={(e) => setEmail(e.target.value)} fullWidth />
+          <TextField label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} fullWidth />
+          <TextField label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} fullWidth />
+          <TextField label="Rol" value={role} onChange={(e) => setRole(e.target.value)} fullWidth />
+          <Button type="submit" variant="contained" color="primary">Registrarse</Button>
+        </Stack>
+      </Box>
+
+      {error && <Typography sx={{ color: 'red', marginTop: '10px' }}>{error}</Typography>}
+      {success && <Typography sx={{ color: 'green', marginTop: '10px' }}>{success}</Typography>}
+    </Container>
   );
 };
 
-export default RegisterForm;
+export default RegisterPage;
