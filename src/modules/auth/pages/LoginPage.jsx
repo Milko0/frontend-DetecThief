@@ -5,12 +5,12 @@ import { Box, Container, Stack } from '@mui/system';
 import TextField from '@mui/material/TextField';
 import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Asegúrate de tener la imagen en la carpeta correcta
 import { useNavigate } from "react-router-dom";
-import { login } from '../services/authService'; // Función de login que creamos previamente
+import { supabase } from '../../../utils/supabaseClient.js'; // Importamos el cliente de Supabase
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoginForm, setIsLoginForm] = useState(true);
+  const [isLoginForm, setIsLoginForm] = useState(true); // Definimos el estado para cambiar entre login y registro
   const [error, setError] = useState('');  // Para manejar el mensaje de error
   const navigate = useNavigate();
 
@@ -24,11 +24,21 @@ const LoginPage = () => {
     }
 
     try {
-      const response = await login(email, password);  // Llamamos al servicio de login
-      console.log('Login successful', response);
-      navigate('/home');  // Redirige a la página principal o dashboard
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: 'http://localhost:5173/welcome'  // Redirige al usuario después de hacer clic en el Magic Link
+        }
+      });
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setError('');
+        alert('Revisa tu correo para el enlace de login.');
+      }
     } catch (err) {
-      setError(`Error en la autenticación: ${err.message}`);  // Usamos 'err' para mostrar el mensaje
+      setError(`Error en el envío del Magic Link: ${err.message}`);
     }
   };
 
@@ -69,7 +79,7 @@ const LoginPage = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   fullWidth
                 />
-                <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Ingresar</Button>
+                <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Enviar Magic Link</Button>
               </Stack>
 
               {/* Mostrar mensaje de error si existe */}
