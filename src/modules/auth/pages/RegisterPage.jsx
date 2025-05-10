@@ -1,74 +1,72 @@
 // src/modules/auth/pages/RegisterPage.jsx
 import React, { useState } from 'react';
-import { Button, Typography, TextField, Container } from "@mui/material";
+import { Button, Typography, TextField, Container, CircularProgress } from "@mui/material";
 import { Box, Stack } from '@mui/system';
-import { supabase } from '../../../supabaseClient'; // Asegúrate de tener tu cliente Supabase configurado
+import { supabase } from '../../../supabaseClient';
+import { useNavigate } from 'react-router-dom';
+
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState(''); 
   const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState('user');
+  const [lastName, setLastName] = useState(''); 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  // Función para generar una contraseña aleatoria segura
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
+    let password = '';
+    for (let i = 0; i < 16; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
-    if (!username || !email || !password || !firstName || !lastName) {
+    if (!username || !email || !firstName || !lastName) {
       setError('Por favor, completa todos los campos.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-
-    if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres.');
+      setLoading(false);
       return;
     }
 
     try {
-      // Enviar los datos al backend directamente
-      const response = await fetch('http://localhost:8080/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username,
-          email,
-          password,
-          firstName,
-          lastName,
-          role,
-        }),
+      // Generar contraseña aleatoria para Supabase
+      const randomPassword = generateRandomPassword();
+
+      // Registrar usuario en Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password: randomPassword, // Se registra con contraseña aleatoria que no necesitará recordar
       });
 
-      if (response.ok) {
-        setSuccess('Usuario registrado exitosamente.');
-        setError('');
-        
-        // Limpiar formulario
-        setUsername('');
-        setEmail('');
-        setPassword('');
-        setConfirmPassword('');
-        setFirstName('');
-        setLastName('');
-        setRole('user');
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Error al registrar usuario');
-        setSuccess('');
-      }
+      if (authError) throw new Error(authError.message);
+
+ 
+      setSuccess('Usuario registrado exitosamente. Se ha enviado un correo para verificar tu cuenta.');
+      
+      // Limpiar formulario
+      setUsername('');
+      setEmail(''); 
+      setFirstName('');
+      setLastName('');
+      
+      // Opcional: redireccionar al login después de unos segundos
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (err) {
-      setError(`Error inesperado: ${err.message}`);
-      setSuccess('');
+      console.error(err);
+      setError(err.message || 'Error inesperado al registrar usuario');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,26 +78,45 @@ const RegisterPage = () => {
 
       <Box sx={{ width: '100%' }}>
         <Stack onSubmit={handleRegister} component="form" direction="column" spacing={3}>
-          <TextField label="Nombre de usuario" value={username} onChange={(e) => setUsername(e.target.value)} fullWidth />
-          <TextField label="Correo electrónico" value={email} type="email" onChange={(e) => setEmail(e.target.value)} fullWidth />
           <TextField 
-            label="Contraseña" 
-            value={password} 
-            type="password" 
-            onChange={(e) => setPassword(e.target.value)} 
+            label="Nombre de usuario" 
+            value={username} 
+            onChange={(e) => setUsername(e.target.value)} 
             fullWidth 
+            required
           />
           <TextField 
-            label="Confirmar contraseña" 
-            value={confirmPassword} 
-            type="password" 
-            onChange={(e) => setConfirmPassword(e.target.value)} 
+            label="Correo electrónico" 
+            value={email} 
+            type="email" 
+            onChange={(e) => setEmail(e.target.value)} 
             fullWidth 
+            required
+            helperText="Recibirás un correo para confirmar tu cuenta"
           />
-          <TextField label="Nombre" value={firstName} onChange={(e) => setFirstName(e.target.value)} fullWidth />
-          <TextField label="Apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} fullWidth />
-          <TextField label="Rol" value={role} onChange={(e) => setRole(e.target.value)} fullWidth />
-          <Button type="submit" variant="contained" color="primary">Registrarse</Button>
+          <TextField 
+            label="Nombre" 
+            value={firstName} 
+            onChange={(e) => setFirstName(e.target.value)} 
+            fullWidth 
+            required
+          />
+          <TextField 
+            label="Apellido" 
+            value={lastName} 
+            onChange={(e) => setLastName(e.target.value)} 
+            fullWidth 
+            required
+          /> 
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary"
+            disabled={loading}
+            startIcon={loading && <CircularProgress size={20} color="inherit" />}
+          >
+            {loading ? 'Registrando...' : 'Registrarse'}
+          </Button>
         </Stack>
       </Box>
 

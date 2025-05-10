@@ -18,8 +18,8 @@ const LoginPage = () => {
     e.preventDefault();
 
     // Validación básica antes de hacer la solicitud al backend
-    if (!email || !password) {
-      setError('Por favor ingresa tu correo y contraseña');
+    if (!email ) {
+      setError('Por favor ingresa tu correo');
       return;
     }
 
@@ -70,15 +70,7 @@ const LoginPage = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   fullWidth
                 />
-                <TextField
-                  name="password"
-                  type="password"
-                  label="Contraseña"
-                  variant="outlined"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  fullWidth
-                />
+  
                 <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Enviar Magic Link</Button>
               </Stack>
 
