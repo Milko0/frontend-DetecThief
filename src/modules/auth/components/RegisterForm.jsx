@@ -5,6 +5,8 @@ import { supabase } from '../services/supabaseClient';
 const RegisterForm = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('user');
@@ -15,42 +17,55 @@ const RegisterForm = () => {
     e.preventDefault();
 
     // Validación básica
-    if (!username || !email || !firstName || !lastName) {
+    if (!username || !email || !password || !firstName || !lastName) {
       setError('Todos los campos son obligatorios.');
       return;
     }
 
+    if (password !== confirmPassword) {
+      setError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+
     try {
-      // 1. Registrar en Supabase Auth sin password (magic link)
-      const {  error: supabaseError } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: 'http://localhost:3000/confirm',
-        },
-      });
-
-      if (supabaseError) throw supabaseError;
-
-      // 2. Enviar los datos al backend
+      // Enviar los datos directamente al backend sin usar Supabase
       const response = await fetch('http://localhost:8080/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username,
           email,
+          password,
           firstName,
           lastName,
           role,
         }),
       });
 
-      if (!response.ok) throw new Error('Error al guardar en el backend');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Error al registrar usuario');
+      }
 
-      setSuccess('Se envió el enlace de confirmación al correo');
+      setSuccess('Usuario registrado correctamente');
       setError('');
+      
+      // Opcional: limpiar el formulario después de un registro exitoso
+      setUsername('');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setFirstName('');
+      setLastName('');
+      setRole('user');
     } catch (err) {
       console.error(err);
-      setError('No se pudo registrar el usuario');
+      setError(err.message || 'No se pudo registrar el usuario');
       setSuccess('');
     }
   };
@@ -68,6 +83,14 @@ const RegisterForm = () => {
         <div>
           <label>Correo</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </div>
+        <div>
+          <label>Contraseña</label>
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </div>
+        <div>
+          <label>Confirmar Contraseña</label>
+          <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
         </div>
         <div>
           <label>Nombre</label>
