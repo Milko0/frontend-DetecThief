@@ -1,6 +1,7 @@
 // src/modules/auth/components/RegisterForm.jsx
 import React, { useState } from 'react';
-import { supabase } from '../../../supabaseClient';
+import { useNavigate } from 'react-router-dom';
+import { register } from '../services/authService'; // Asegúrate de que la ruta de importación sea correcta
 
 const RegisterForm = () => {
   const [username, setUsername] = useState('');
@@ -10,16 +11,7 @@ const RegisterForm = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-
-  // Función para generar una contraseña aleatoria segura
-  const generateRandomPassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    let password = '';
-    for (let i = 0; i < 16; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,24 +27,31 @@ const RegisterForm = () => {
     }
 
     try {
-      // Generar contraseña aleatoria para Supabase
-      const randomPassword = generateRandomPassword();
-
-      // Registrar usuario en Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: randomPassword, // Se registra con contraseña aleatoria que no necesitará recordar
-      });
-
-      if (authError) throw new Error(authError.message); 
-
-      setSuccess('Usuario registrado correctamente. Se ha enviado un correo para verificar tu cuenta.');
+      // Utilizar la función register del authService que ya maneja la lógica completa
+      const userData = {
+        username,
+        firstName,
+        lastName
+      };
       
-      // Limpiar el formulario después de un registro exitoso
-      setUsername('');
-      setEmail(''); 
-      setFirstName('');
-      setLastName(''); 
+      const response = await register(email, userData);
+      
+      if (response.success) {
+        setSuccess(response.message);
+        
+        // Limpiar el formulario después de un registro exitoso
+        setUsername('');
+        setEmail(''); 
+        setFirstName('');
+        setLastName('');
+        
+        // Opcionalmente, redirigir al login después de unos segundos
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      } else {
+        setError(response.message || 'Error en el registro');
+      }
     } catch (err) {
       console.error(err);
       setError(err.message || 'No se pudo registrar el usuario');

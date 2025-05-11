@@ -1,66 +1,52 @@
+// src/modules/auth/pages/LoginPage.jsx
 import React, { useState } from 'react';
-import { Button, Typography, CircularProgress, Alert } from "@mui/material";
+import { Button, Typography } from "@mui/material";
 import { Box, Container, Stack } from '@mui/system';
 import TextField from '@mui/material/TextField';
-import LOGIN_IMG from '../../../assets/imagen_login.svg';
+import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Asegúrate de tener la imagen en la carpeta correcta
 import { useNavigate } from "react-router-dom";
-import { loginWithMagicLink } from '../services/authService';
+import { supabase } from '../../../supabaseClient.js'; // Importamos el cliente de Supabase
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoginForm, setIsLoginForm] = useState(true); // Definimos el estado para cambiar entre login y registro
+  const [error, setError] = useState('');  // Para manejar el mensaje de error
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
 
-    // Validación básica del formato de correo electrónico
-    if (!email) {
-      setError('Por favor ingresa tu correo electrónico');
-      setLoading(false);
-      return;
-    }
-
-    // Validación simple del formato de correo
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Por favor ingresa un correo electrónico válido');
-      setLoading(false);
+    // Validación básica antes de hacer la solicitud al backend
+    if (!email ) {
+      setError('Por favor ingresa tu correo');
       return;
     }
 
     try {
-      // Utilizamos la función mejorada de authService que verifica si el email existe
-      const response = await loginWithMagicLink(email);
-      
-      if (response.success) {
-        setSuccess(response.message);
-        setEmail(''); // Limpiamos el campo después de enviar
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email,
+        options: {
+          emailRedirectTo: 'http://localhost:5173/welcome',
+          shouldCreateUser: false // Esto evita que se creen usuarios automáticamente  // Redirige al usuario después de hacer clic en el Magic Link
+        }
+      });
+
+      if (error) {
+        setError(error.message);
       } else {
-        // Si no fue exitoso pero tenemos un mensaje (ej: correo no registrado)
-        setError(response.message);
+        setError('');
+        alert('Revisa tu correo para el enlace de login.');
       }
     } catch (err) {
-      console.error(err);
-      setError(err.message || 'Error al iniciar sesión');
-    } finally {
-      setLoading(false);
+      setError(`Error en el envío del Magic Link: ${err.message}`);
     }
   };
 
-  // Función para registrarse si el correo no existe
-  const handleRedirectToRegister = () => {
-    // Si hay un correo válido, podemos pasarlo a la página de registro como un parámetro de estado
-    if (email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      navigate('/register', { state: { email } });
-    } else {
-      navigate('/register');
-    }
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    // Lógica de registro (puedes llamar un servicio similar al login)
+    alert("Error en el registro");
   };
 
   return (
@@ -70,70 +56,47 @@ const LoginPage = () => {
         <img src={LOGIN_IMG} alt="login_img" style={{ maxWidth: '100%', width: '400px', height: 'auto' }} />
       </Box>
 
-      {/* Formulario de login */}
+      {/* Formulario de login o registro */}
       <Box sx={{ height: '100vh', width: { xs: '100%', md: '50%' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{ height: 'auto', width: '450px', mx: 4 }}>
-          <Stack onSubmit={handleLogin} component='form' direction="column" spacing={3}>
-            <Typography variant="h4" sx={{ textAlign: "center" }}>Iniciar Sesión</Typography>
-            <TextField
-              name="email"
-              label="Correo electrónico"
-              variant="outlined"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              fullWidth
-              error={!!error && (error.includes('correo') || error.includes('registrado'))}
-              helperText="Ingresa el correo con el que te registraste"
-              disabled={loading}
-            />
-            <Button 
-              type="submit" 
-              variant="contained" 
-              size="large" 
-              sx={{ color: 'white' }}
-              disabled={loading}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              {loading ? 'Verificando...' : 'Enviar Magic Link'}
-            </Button>
-          </Stack>
+        {
+          isLoginForm ?
+            <Box sx={{ height: '400px', width: '450px', mx: 4 }}>
+              <Stack onSubmit={handleLogin} component='form' direction="column" spacing={3}>
+                <Typography variant="h4" sx={{ textAlign: "center" }}>Iniciar Sesión</Typography>
+                <TextField
+                  name="email"
+                  label="Correo electrónico"
+                  variant="outlined"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  fullWidth
+                />
+  
+                <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Enviar Magic Link</Button>
+              </Stack>
 
-          {/* Mostrar mensaje de error con opción de registro */}
-          {error && error.includes('no está registrado') && (
-            <Alert 
-              severity="warning" 
-              sx={{ mt: 2 }}
-              action={
-                <Button 
-                  color="inherit" 
-                  size="small" 
-                  onClick={handleRedirectToRegister}
-                >
-                  Registrarme
-                </Button>
-              }
-            >
-              {error}
-            </Alert>
-          )}
+              {/* Mostrar mensaje de error si existe */}
+              {error && <Typography sx={{ color: 'red', textAlign: 'center' }}>{error}</Typography>}
 
-          {/* Otros errores */}
-          {error && !error.includes('no está registrado') && (
-            <Typography sx={{ color: 'red', textAlign: 'center', mt: 2 }}>{error}</Typography>
-          )}
-
-          {/* Mensaje de éxito */}
-          {success && <Typography sx={{ color: 'green', textAlign: 'center', mt: 2 }}>{success}</Typography>}
-
-          <Stack>
-            <Typography sx={{ textAlign: "center", mt: 2 }}>
-              ¿Aún no tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); handleRedirectToRegister(); }}>Regístrate aquí</a>
-            </Typography>
-            <Typography sx={{ mt: 2, textAlign: "center" }}>
-              <a href="#" onClick={(e) => { e.preventDefault(); navigate('/forgot-password'); }}>¿Olvidaste tu contraseña?</a>
-            </Typography>
-          </Stack>
-        </Box>
+              <Stack>
+                <Typography sx={{ textAlign: "center", mt: 2 }}>
+                  ¿Aún no tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginForm(false); }}>Regístrate aquí</a>
+                </Typography> 
+              </Stack>
+            </Box>
+            :
+            <Box sx={{ height: '400px', width: '450px', mx: 4 }}>
+              <Stack onSubmit={handleRegister} component='form' direction="column" spacing={3}>
+                <Typography variant="h4" sx={{ textAlign: "center" }}>Registro</Typography>
+                <TextField name="email" label="Correo electrónico" variant="outlined" fullWidth />
+                <TextField name="password" type="password" label="Contraseña" variant="outlined" fullWidth />
+                <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Registrarme</Button>
+              </Stack>
+              <Typography sx={{ textAlign: "center", mt: 2 }}>
+                ¿Ya tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginForm(true); }}>Inicia sesión aquí</a>
+              </Typography>
+            </Box>
+        }
       </Box>
     </Container>
   );

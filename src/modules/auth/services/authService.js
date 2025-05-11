@@ -1,77 +1,94 @@
 // src/modules/auth/services/authService.js
 import { supabase } from '../../../supabaseClient';
-
-// URL de backend si es necesario para verificaciones adicionales
-const API_URL = 'http://localhost:8080/v1/auth';
-
+ 
 /**
  * Verifica si un correo electrónico existe en la base de datos
  * Utilizamos una tabla personalizada de usuarios para esta verificación
  */
 export const checkEmailExists = async (email) => {
   try {
-    // Buscar el email en la tabla de usuarios (esto depende de tu estructura de datos)
-    // Asume que tienes una tabla 'users' o similar con campo 'email'
+    console.log("Verificando email en tabla usuarios:", email);
+    // Buscar el email en la tabla de usuarios - el nombre correcto es 'usuarios' no 'users'
     const { data, error } = await supabase
-      .from('users')
+      .from('usuarios')
       .select('email')
       .eq('email', email)
       .maybeSingle();
 
     if (error) {
-      console.error('Error al verificar email:', error);
-      return { exists: false, error: error.message };
+      console.error('Error al verificar email en DB:', error);
+      // Como tenemos problemas con la tabla, vamos a usar un método alternativo
+      console.log("Intentando verificar directamente con auth...");
+      return await verifyEmailWithAuth(email);
     }
 
+    console.log("Resultado de verificación en DB:", data ? "encontrado" : "no encontrado");
     // Si encontramos el email en la tabla, entonces existe
     return { exists: !!data, userData: data || null };
   } catch (error) {
-    console.error('Error al verificar correo:', error);
-    return { exists: false, error: error.message };
+    console.error('Error inesperado al verificar correo en DB:', error);
+    // Intentamos el método alternativo
+    return await verifyEmailWithAuth(email);
   }
 };
 
 /**
- * Método alternativo para verificar la existencia de un email 
- * basado en el intento de iniciar sesión y análisis del error
+ * MÉTODO ALTERNATIVO para verificar si un email existe directamente con la API de autenticación
+ * En vez de usar la tabla 'usuarios', consultamos directamente al servicio de autenticación
  */
-export const verifyEmailWithSignIn = async (email) => {
+export const verifyEmailWithAuth = async (email) => {
   try {
-    // Intentar iniciar sesión con una contraseña incorrecta
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password: 'INTENTIONALLY_WRONG_PASSWORD_FOR_VERIFICATION',
-    });
-
-    // Si no hay error, algo está mal (esto no debería suceder)
-    if (!error) {
-      console.warn('Inexplicably logged in with wrong password during verification');
-      return { exists: true };
-    }
-
-    // Analizar el mensaje de error para determinar si el usuario existe
-    const errorMessage = error.message.toLowerCase();
+    console.log("Verificando email directamente con Auth API:", email);
     
-    // Si el error menciona "invalid login credentials", el email existe pero la contraseña es incorrecta
-    // Si menciona "email not confirmed", el email existe pero no está confirmado
-    // Si menciona "user not found", el email no existe
-    if (errorMessage.includes('invalid login credentials') || 
-        errorMessage.includes('email not confirmed')) {
-      return { exists: true };
-    }
-    
-    if (errorMessage.includes('user not found') || 
-        errorMessage.includes('no user found')) {
+    // Validamos formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      console.log("Formato de email inválido");
       return { exists: false };
     }
     
-    // Si el mensaje de error no es concluyente, asumimos que no existe por seguridad
-    console.warn('Error inconcluyente al verificar email:', error.message);
-    return { exists: false };
+    // Realizamos un intento controlado de inicio de sesión para verificar
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        shouldCreateUser: false // Esto es crucial: evita crear nuevos usuarios
+      }
+    });
+
+    // Si no hay error o el error no es "user not found", entonces el usuario existe
+    if (!error) {
+      console.log("Email verificado: existe (OTP enviado con éxito)");
+      return { exists: true };
+    }
+    
+    // Analizamos el mensaje de error
+    const errorMessage = error.message.toLowerCase();
+    console.log("Respuesta de Auth API:", errorMessage);
+    
+    // Si el error es "user not found", el email no existe
+    if (errorMessage.includes('user not found')) {
+      console.log("Email verificado: no existe");
+      return { exists: false };
+    }
+    
+    // Cualquier otro error (incluyendo rate limiting, etc.) asumimos que el usuario existe
+    // para mayor seguridad en el flujo de login
+    console.log("Asumiendo que el email existe basado en la respuesta de Auth");
+    return { exists: true };
   } catch (error) {
-    console.error('Error en verificación alternativa de email:', error);
-    return { exists: false };
+    console.error('Error inesperado en verificación con Auth API:', error);
+    // Por seguridad asumimos que existe en caso de error
+    return { exists: true };
   }
+};
+
+/**
+ * Método antiguo para verificación - mantenido por compatibilidad
+ * Ahora simplemente redirige al nuevo método
+ */
+export const verifyEmailWithSignIn = async (email) => {
+  console.log("Método obsoleto, usando verifyEmailWithAuth");
+  return await verifyEmailWithAuth(email);
 };
 
 /**
@@ -80,45 +97,61 @@ export const verifyEmailWithSignIn = async (email) => {
  */
 export const loginWithMagicLink = async (email) => {
   try {
-    // Verificar si el correo existe usando el método más confiable
-    let emailExists = false;
-    
-    // Primero intentamos con la tabla de usuarios
-    const checkResult = await checkEmailExists(email);
-    emailExists = checkResult.exists;
-    
-    // Si no pudimos determinar con la tabla, usamos el método alternativo
-    if (!emailExists && !checkResult.error) {
-      const verifyResult = await verifyEmailWithSignIn(email);
-      emailExists = verifyResult.exists;
+    if (!email) {
+      return { 
+        success: false, 
+        message: 'El correo electrónico es obligatorio' 
+      };
     }
+
+    console.log("Iniciando proceso de login con Magic Link para:", email);
     
-    // Si después de ambas verificaciones, determinamos que el email no existe
-    if (!emailExists) {
+    // Verificar si el correo existe
+    const checkResult = await checkEmailExists(email);
+    
+    // Si después de la verificación, determinamos que el email no existe
+    if (!checkResult.exists) {
+      console.log("Email no registrado:", email);
       return { 
         success: false, 
         message: 'Este correo electrónico no está registrado. Por favor, regístrate primero.' 
       };
     }
     
+    console.log("Email verificado, enviando magic link a:", email);
+    
     // Si el correo existe, procedemos a enviar el Magic Link
+    // IMPORTANTE: shouldCreateUser: false para evitar la creación automática de usuarios
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: window.location.origin + '/welcome'
+        emailRedirectTo: window.location.origin + '/welcome',
+        shouldCreateUser: false // Esto evita que se creen usuarios automáticamente
       }
     });
 
     if (error) {
+      // Si el error es que el usuario no existe, mostramos mensaje claro
+      if (error.message.toLowerCase().includes('user not found')) {
+        console.log("Error confirmado: email no registrado");
+        return { 
+          success: false, 
+          message: 'Este correo electrónico no está registrado en el sistema. Por favor, regístrate primero.' 
+        };
+      }
+      
+      console.error("Error al enviar magic link:", error);
       throw error;
     }
 
+    console.log("Magic link enviado correctamente");
+    
     return { 
       success: true, 
       message: 'Se ha enviado un enlace de acceso a tu correo electrónico.' 
     };
   } catch (error) {
-    console.error('Error en envío de magic link:', error);
+    console.error('Error en proceso de envío de magic link:', error);
     throw new Error(error.message || 'Error al enviar enlace de acceso');
   }
 };
@@ -129,17 +162,20 @@ export const loginWithMagicLink = async (email) => {
  */
 export const register = async (email, userData) => {
   try {
+    if (!email || !userData || !userData.username || !userData.firstName || !userData.lastName) {
+      return {
+        success: false,
+        message: 'Todos los campos son obligatorios'
+      };
+    }
+
+    console.log("Iniciando registro para:", email);
+    
     // Verificar si el correo ya existe
     const checkResult = await checkEmailExists(email);
-    let emailExists = checkResult.exists;
     
-    // Si no pudimos determinar con la tabla, usamos el método alternativo
-    if (!emailExists && !checkResult.error) {
-      const verifyResult = await verifyEmailWithSignIn(email);
-      emailExists = verifyResult.exists;
-    }
-    
-    if (emailExists) {
+    if (checkResult.exists) {
+      console.log("Email ya registrado:", email);
       return { 
         success: false, 
         message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión.' 
@@ -148,6 +184,8 @@ export const register = async (email, userData) => {
     
     // Generar una contraseña aleatoria segura
     const randomPassword = generateRandomPassword();
+    
+    console.log("Registrando usuario en Supabase Auth");
     
     // Registrar usuario en Supabase
     const { data, error } = await supabase.auth.signUp({
@@ -164,12 +202,24 @@ export const register = async (email, userData) => {
     });
 
     if (error) {
+      // Si el error menciona que el usuario ya está registrado, manejamos esto específicamente
+      if (error.message.includes('already registered')) {
+        console.log("Usuario ya registrado en Auth pero no en tabla personalizada");
+        return { 
+          success: false, 
+          message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión o restablece tu contraseña.' 
+        };
+      }
+      
+      console.error("Error al registrar en Supabase Auth:", error);
       throw error;
     }
 
+    console.log("Usuario registrado en Auth. Guardando en tabla usuarios");
+    
     // También guardar en la tabla personalizada de usuarios para futuras verificaciones
     try {
-      await supabase.from('users').insert([
+      await supabase.from('usuarios').insert([
         { 
           user_id: data.user.id,
           email: email,
@@ -178,8 +228,9 @@ export const register = async (email, userData) => {
           last_name: userData.lastName
         }
       ]);
+      console.log("Usuario guardado exitosamente en tabla usuarios");
     } catch (tableError) {
-      console.error('Error al guardar en tabla de usuarios:', tableError);
+      console.error('Error al guardar en tabla usuarios:', tableError);
       // Continuamos incluso si hay error aquí, no es crítico
     }
 
@@ -189,7 +240,16 @@ export const register = async (email, userData) => {
       message: 'Usuario registrado correctamente. Revisa tu correo para confirmar tu cuenta.'
     };
   } catch (error) {
-    console.error('Error en registro:', error);
+    console.error('Error en proceso de registro:', error);
+    
+    // Si el error menciona que el usuario ya está registrado, manejamos esto específicamente
+    if (error.message && error.message.includes('already registered')) {
+      return { 
+        success: false, 
+        message: 'Este correo electrónico ya está registrado. Por favor, inicia sesión.' 
+      };
+    }
+    
     throw new Error(error.message || 'Error al registrar usuario');
   }
 };
@@ -202,6 +262,7 @@ export const checkAuth = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
     
     if (error) {
+      console.error("Error al verificar sesión:", error);
       throw error;
     }
 
@@ -226,6 +287,7 @@ export const logout = async () => {
     const { error } = await supabase.auth.signOut();
     
     if (error) {
+      console.error("Error al cerrar sesión:", error);
       throw error;
     }
     
