@@ -1,9 +1,10 @@
-// src/modules/auth/pages/RegisterPage.jsx
 import React, { useState } from 'react';
-import { Button, Typography, TextField, Container, CircularProgress } from "@mui/material";
-import { Box, Stack } from '@mui/system';
-import { supabase } from '../../../supabaseClient';
-import { useNavigate } from 'react-router-dom';
+import { Button, Typography, CircularProgress } from "@mui/material";
+import { Box, Container, Stack } from '@mui/system';
+import TextField from '@mui/material/TextField';
+import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Usamos la misma imagen
+import { useNavigate } from "react-router-dom";
+import { supabase } from '../../../supabaseClient.js';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -49,7 +50,6 @@ const RegisterPage = () => {
 
       if (authError) throw new Error(authError.message);
 
- 
       setSuccess('Usuario registrado exitosamente. Se ha enviado un correo para verificar tu cuenta.');
       
       // Limpiar formulario
@@ -58,7 +58,7 @@ const RegisterPage = () => {
       setFirstName('');
       setLastName('');
       
-      // Opcional: redireccionar al login después de unos segundos
+      // Redireccionar al login después de unos segundos
       setTimeout(() => {
         navigate('/login');
       }, 3000);
@@ -71,57 +71,75 @@ const RegisterPage = () => {
   };
 
   return (
-    <Container maxWidth="xs" sx={{ textAlign: 'center', marginTop: '50px' }}>
-      <Typography variant="h4" sx={{ marginBottom: '20px' }}>
-        Registro de Usuario
-      </Typography>
-
-      <Box sx={{ width: '100%' }}>
-        <Stack onSubmit={handleRegister} component="form" direction="column" spacing={3}>
-          <TextField 
-            label="Nombre de usuario" 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            fullWidth 
-            required
-          />
-          <TextField 
-            label="Correo electrónico" 
-            value={email} 
-            type="email" 
-            onChange={(e) => setEmail(e.target.value)} 
-            fullWidth 
-            required
-            helperText="Recibirás un correo para confirmar tu cuenta"
-          />
-          <TextField 
-            label="Nombre" 
-            value={firstName} 
-            onChange={(e) => setFirstName(e.target.value)} 
-            fullWidth 
-            required
-          />
-          <TextField 
-            label="Apellido" 
-            value={lastName} 
-            onChange={(e) => setLastName(e.target.value)} 
-            fullWidth 
-            required
-          /> 
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary"
-            disabled={loading}
-            startIcon={loading && <CircularProgress size={20} color="inherit" />}
-          >
-            {loading ? 'Registrando...' : 'Registrarse'}
-          </Button>
-        </Stack>
+    <Container maxWidth="xl" sx={{ display: 'flex' }} disableGutters>
+      {/* Imagen de la izquierda - misma estructura que en LoginPage */}
+      <Box sx={{ display: 'flex', bgcolor: '#B7A8B2', height: '100vh', width: { xs: '0%', md: '50%' }, justifyContent: 'center', alignItems: 'center' }}>
+        <img src={LOGIN_IMG} alt="register_img" style={{ maxWidth: '100%', width: '400px', height: 'auto' }} />
       </Box>
 
-      {error && <Typography sx={{ color: 'red', marginTop: '10px' }}>{error}</Typography>}
-      {success && <Typography sx={{ color: 'green', marginTop: '10px' }}>{success}</Typography>}
+      {/* Formulario de registro */}
+      <Box sx={{ height: '100vh', width: { xs: '100%', md: '50%' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ width: '450px', mx: 4, my: 4 }}>
+          <Stack onSubmit={handleRegister} component="form" direction="column" spacing={3}>
+            <Typography variant="h4" sx={{ textAlign: "center" }}>Registro de Usuario</Typography>
+            
+            <TextField 
+              label="Nombre de usuario" 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)} 
+              fullWidth 
+              required
+            />
+            
+            <TextField 
+              label="Correo electrónico" 
+              value={email} 
+              type="email" 
+              onChange={(e) => setEmail(e.target.value)} 
+              fullWidth 
+              required
+              helperText="Recibirás un correo para confirmar tu cuenta"
+            />
+            
+            <TextField 
+              label="Nombre" 
+              value={firstName} 
+              onChange={(e) => setFirstName(e.target.value)} 
+              fullWidth 
+              required
+            />
+            
+            <TextField 
+              label="Apellido" 
+              value={lastName} 
+              onChange={(e) => setLastName(e.target.value)} 
+              fullWidth 
+              required
+            /> 
+            
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary"
+              disabled={loading}
+              size="large"
+              sx={{ color: 'white' }}
+              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+            >
+              {loading ? 'Registrando...' : 'Registrarse'}
+            </Button>
+          </Stack>
+
+          {/* Mostrar mensajes de error o éxito */}
+          {error && <Typography sx={{ color: 'red', textAlign: 'center', mt: 2 }}>{error}</Typography>}
+          {success && <Typography sx={{ color: 'green', textAlign: 'center', mt: 2 }}>{success}</Typography>}
+
+          {/* Link para volver al login */}
+          <Typography sx={{ textAlign: "center", mt: 2 }}>
+            ¿Ya tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>Inicia sesión aquí</a>
+          </Typography>
+        </Box>
+      </Box>
     </Container>
   );
 };
