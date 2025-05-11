@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Button, Typography, CircularProgress } from "@mui/material";
 import { Box, Container, Stack } from '@mui/system';
 import TextField from '@mui/material/TextField';
-import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Usamos la misma imagen
+import LOGIN_IMG from '../../../assets/imagen_login.svg';
 import { useNavigate } from "react-router-dom";
-import { supabase } from '../../../supabaseClient.js';
+import { register } from '../services/authService';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -16,52 +16,51 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Función para generar una contraseña aleatoria segura
-  const generateRandomPassword = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()';
-    let password = '';
-    for (let i = 0; i < 16; i++) {
-      password += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return password;
-  };
-
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
+    // Validaciones básicas
     if (!username || !email || !firstName || !lastName) {
       setError('Por favor, completa todos los campos.');
       setLoading(false);
       return;
     }
 
+    // Validación simple del formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Por favor ingresa un correo electrónico válido');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Generar contraseña aleatoria para Supabase
-      const randomPassword = generateRandomPassword();
-
-      // Registrar usuario en Supabase
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password: randomPassword, // Se registra con contraseña aleatoria que no necesitará recordar
-      });
-
-      if (authError) throw new Error(authError.message);
-
-      setSuccess('Usuario registrado exitosamente. Se ha enviado un correo para verificar tu cuenta.');
+      // Utilizamos la función de authService que ya verifica si el email existe
+      const userData = {
+        username,
+        firstName,
+        lastName
+      };
       
-      // Limpiar formulario
-      setUsername('');
-      setEmail(''); 
-      setFirstName('');
-      setLastName('');
+      const response = await register(email, userData);
       
-      // Redireccionar al login después de unos segundos
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      if (response.success) {
+        setSuccess(response.message);
+        
+        // Limpiar formulario
+        setUsername('');
+        setEmail(''); 
+        setFirstName('');
+        setLastName('');
+        
+        // Redireccionar al login después de unos segundos
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
     } catch (err) {
       console.error(err);
       setError(err.message || 'Error inesperado al registrar usuario');
@@ -89,6 +88,7 @@ const RegisterPage = () => {
               onChange={(e) => setUsername(e.target.value)} 
               fullWidth 
               required
+              disabled={loading}
             />
             
             <TextField 
@@ -99,6 +99,8 @@ const RegisterPage = () => {
               fullWidth 
               required
               helperText="Recibirás un correo para confirmar tu cuenta"
+              disabled={loading}
+              error={!!error && error.includes('correo')}
             />
             
             <TextField 
@@ -107,6 +109,7 @@ const RegisterPage = () => {
               onChange={(e) => setFirstName(e.target.value)} 
               fullWidth 
               required
+              disabled={loading}
             />
             
             <TextField 
@@ -115,6 +118,7 @@ const RegisterPage = () => {
               onChange={(e) => setLastName(e.target.value)} 
               fullWidth 
               required
+              disabled={loading}
             /> 
             
             <Button 
