@@ -67,10 +67,7 @@ const LoginPage = () => {
           <Stack>
             <Typography sx={{ textAlign: "center", mt: 2 }}>
               ¿Aún no tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); navigate('/register'); }}>Regístrate aquí</a>
-            </Typography>
-            <Typography sx={{ mt: 2, textAlign: "center" }}>
-              <a href="#" onClick={() => navigate('/forgot-password')}>¿Olvidaste tu contraseña?</a>
-            </Typography>
+            </Typography> 
           </Stack>
         </Box>
       </Box>
