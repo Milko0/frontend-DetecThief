@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Typography, Button, Container, Box, Avatar, Paper, CircularProgress, Divider } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { supabase } from '../../../supabaseClient';
-import Sidebar from '../components/Sidebar'; // ✅ Asegúrate que la ruta sea correcta
+import Sidebar from '../components/Sidebar'; 
 
 const WelcomePage = () => {
   const [user, setUser] = useState(null);
