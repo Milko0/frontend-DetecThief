@@ -5,12 +5,14 @@ import { register } from '../services/authService'; // Asegúrate de que la ruta
 
 const RegisterForm = () => {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState(''); 
+  const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState(''); 
+  const [lastName, setLastName] = useState('');
+  
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -22,6 +24,14 @@ const RegisterForm = () => {
     // Validación básica
     if (!username || !email || !firstName || !lastName) {
       setError('Todos los campos son obligatorios.');
+      setLoading(false);
+      return;
+    }
+
+    // Validación simple del formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Por favor ingresa un correo electrónico válido');
       setLoading(false);
       return;
     }
@@ -41,7 +51,7 @@ const RegisterForm = () => {
         
         // Limpiar el formulario después de un registro exitoso
         setUsername('');
-        setEmail(''); 
+        setEmail('');
         setFirstName('');
         setLastName('');
         
@@ -54,11 +64,12 @@ const RegisterForm = () => {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || 'No se pudo registrar el usuario');
+      setError(err.message || 'Error inesperado al registrar usuario');
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div>

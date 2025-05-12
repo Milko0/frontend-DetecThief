@@ -80,7 +80,8 @@ const LoginPage = () => {
 
               <Stack>
                 <Typography sx={{ textAlign: "center", mt: 2 }}>
-                  ¿Aún no tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginForm(false); }}>Regístrate aquí</a>
+               ¿Aún no tienes una cuenta? <a href="/register" onClick={(e) => { e.preventDefault(); navigate('/register'); }}>Regístrate aquí</a>
+
                 </Typography> 
               </Stack>
             </Box>
