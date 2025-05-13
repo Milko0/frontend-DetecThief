@@ -3,6 +3,7 @@ import React from 'react';
 import { Box, Container, Typography, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
 import Sidebar from '../components/Sidebar';
 
+
 const dummyIncidentes = [
   { 
     id: 1, 
@@ -53,7 +54,8 @@ const PrincipalPage = () => {
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6">Dashboard de Estadísticas</Typography>
             <Box sx={{ mt: 2 }}>
-              <img src="https://via.placeholder.com/600x300?text=Gráfico+Estadístico" alt="Dashboard" width="100%" />
+             <img src="/assets/dashboard.png" alt="Dashboard" width="100%" />
+
             </Box>
           </Paper>
         </Container>
