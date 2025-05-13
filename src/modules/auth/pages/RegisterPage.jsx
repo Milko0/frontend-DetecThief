@@ -1,30 +1,86 @@
-import React, { useState } from 'react';
-import { Button, Typography, CircularProgress } from "@mui/material";
-import { Box, Container, Stack } from '@mui/system';
-import TextField from '@mui/material/TextField';
-import LOGIN_IMG from '../../../assets/imagen_login.svg';
-import { useNavigate } from "react-router-dom";
+// src/modules/auth/pages/RegisterPage.jsx
+import React, { useState, useEffect } from 'react';
+import {
+  Container,
+  Paper,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  Alert,
+  CircularProgress,
+  Box
+} from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { register } from '../services/authService';
+import { supabase } from '../../../supabaseClient';
+import Sidebar from '../components/Sidebar';
+import Header from '../components/Header';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
-  const [email, setEmail] = useState(''); 
+  const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState(''); 
+  const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
+  // Verificar si el usuario actual es administrador
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          navigate('/login');
+          return;
+        }
+        
+        const { data: userResponse } = await supabase.auth.getUser();
+        
+        if (userResponse?.user) {
+          // Verificar el rol desde el backend
+          const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${userResponse.user.email}`);
+          
+          if (response.ok) {
+            const userData = await response.json();
+            const userIsAdmin = userData.rol?.toLowerCase() === 'administrador';
+            
+            setIsAdmin(userIsAdmin);
+            
+            // Redirigir si no es administrador
+            if (!userIsAdmin) {
+              navigate('/principal');
+            }
+          } else {
+            navigate('/principal');
+          }
+        }
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        navigate('/principal');
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    
+    checkAdminStatus();
+  }, [navigate]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
-    // Validaciones básicas
+    // Validación básica
     if (!username || !email || !firstName || !lastName) {
-      setError('Por favor, completa todos los campos.');
+      setError('Todos los campos son obligatorios.');
       setLoading(false);
       return;
     }
@@ -38,28 +94,25 @@ const RegisterPage = () => {
     }
 
     try {
-      // Utilizamos la función de authService que ya verifica si el email existe
+      // Utilizar la función register del authService
       const userData = {
         username,
         firstName,
         lastName
       };
-      
+
       const response = await register(email, userData);
-      
+
       if (response.success) {
         setSuccess(response.message);
-        
-        // Limpiar formulario
+
+        // Limpiar el formulario después de un registro exitoso
         setUsername('');
-        setEmail(''); 
+        setEmail('');
         setFirstName('');
         setLastName('');
-        
-        // Redireccionar al login después de unos segundos
-        setTimeout(() => {
-          navigate('/login');
-        }, 3000);
+      } else {
+        setError(response.message || 'Error en el registro');
       }
     } catch (err) {
       console.error(err);
@@ -69,82 +122,96 @@ const RegisterPage = () => {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <Container sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Container>
+    );
+  }
+
+  if (!isAdmin) {
+    return null; // No debería mostrarse porque se redirecciona antes
+  }
+
   return (
-    <Container maxWidth="xl" sx={{ display: 'flex' }} disableGutters>
-      {/* Imagen de la izquierda - misma estructura que en LoginPage */}
-      <Box sx={{ display: 'flex', bgcolor: '#B7A8B2', height: '100vh', width: { xs: '0%', md: '50%' }, justifyContent: 'center', alignItems: 'center' }}>
-        <img src={LOGIN_IMG} alt="register_img" style={{ maxWidth: '100%', width: '400px', height: 'auto' }} />
-      </Box>
-
-      {/* Formulario de registro */}
-      <Box sx={{ height: '100vh', width: { xs: '100%', md: '50%' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Box sx={{ width: '450px', mx: 4, my: 4 }}>
-          <Stack onSubmit={handleRegister} component="form" direction="column" spacing={3}>
-            <Typography variant="h4" sx={{ textAlign: "center" }}>Registro de Usuario</Typography>
-            
-            <TextField 
-              label="Nombre de usuario" 
-              value={username} 
-              onChange={(e) => setUsername(e.target.value)} 
-              fullWidth 
-              required
-              disabled={loading}
-            />
-            
-            <TextField 
-              label="Correo electrónico" 
-              value={email} 
-              type="email" 
-              onChange={(e) => setEmail(e.target.value)} 
-              fullWidth 
-              required
-              helperText="Recibirás un correo para confirmar tu cuenta"
-              disabled={loading}
-              error={!!error && error.includes('correo')}
-            />
-            
-            <TextField 
-              label="Nombre" 
-              value={firstName} 
-              onChange={(e) => setFirstName(e.target.value)} 
-              fullWidth 
-              required
-              disabled={loading}
-            />
-            
-            <TextField 
-              label="Apellido" 
-              value={lastName} 
-              onChange={(e) => setLastName(e.target.value)} 
-              fullWidth 
-              required
-              disabled={loading}
-            /> 
-            
-            <Button 
-              type="submit" 
-              variant="contained" 
-              color="primary"
-              disabled={loading}
-              size="large"
-              sx={{ color: 'white' }}
-              startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
-            >
-              {loading ? 'Registrando...' : 'Registrarse'}
-            </Button>
-          </Stack>
-
-          {/* Mostrar mensajes de error o éxito */}
-          {error && <Typography sx={{ color: 'red', textAlign: 'center', mt: 2 }}>{error}</Typography>}
-          {success && <Typography sx={{ color: 'green', textAlign: 'center', mt: 2 }}>{success}</Typography>}
-
-          {/* Link para volver al login */}
-          <Typography sx={{ textAlign: "center", mt: 2 }}>
-            ¿Ya tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); navigate('/login'); }}>Inicia sesión aquí</a>
-          </Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header />
+      <Box sx={{ display: 'flex', flexGrow: 1 }}>
+        <Sidebar />
+        <Box component="main" sx={{ flexGrow: 1, p: 4, ml: '240px' }}>
+          <Container maxWidth="sm">
+            <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <PersonAddIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
+                <Typography variant="h5">Registrar Nuevo Usuario</Typography>
+              </Box>
+              
+              {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+              {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
+              
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Nickname"
+                      variant="outlined"
+                      fullWidth
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Correo Electrónico"
+                      type="email"
+                      variant="outlined"
+                      fullWidth
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      helperText="Se enviará un magic link a este correo para completar el registro"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Nombre"
+                      variant="outlined"
+                      fullWidth
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Apellido"
+                      variant="outlined"
+                      fullWidth
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </Grid>
+                  <Grid item xs={12} sx={{ mt: 2 }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      fullWidth
+                      disabled={loading}
+                      sx={{ py: 1.5 }}
+                    >
+                      {loading ? <CircularProgress size={24} /> : 'Registrar Usuario'}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+            </Paper>
+          </Container>
         </Box>
       </Box>
-    </Container>
+    </Box>
   );
 };
 

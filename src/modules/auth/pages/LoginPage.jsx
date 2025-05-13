@@ -1,103 +1,153 @@
 // src/modules/auth/pages/LoginPage.jsx
 import React, { useState } from 'react';
-import { Button, Typography } from "@mui/material";
-import { Box, Container, Stack } from '@mui/system';
-import TextField from '@mui/material/TextField';
+import { 
+  Button, 
+  Typography, 
+  TextField, 
+  Box, 
+  Container, 
+  Stack, 
+  Paper,
+  Alert,
+  CircularProgress
+} from "@mui/material";
 import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Asegúrate de tener la imagen en la carpeta correcta
 import { useNavigate } from "react-router-dom";
-import { supabase } from '../../../supabaseClient.js'; // Importamos el cliente de Supabase
+import { supabase } from '../../../supabaseClient.js';
+import SecurityIcon from '@mui/icons-material/Security';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoginForm, setIsLoginForm] = useState(true); // Definimos el estado para cambiar entre login y registro
-  const [error, setError] = useState('');  // Para manejar el mensaje de error
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
-    // Validación básica antes de hacer la solicitud al backend
-    if (!email ) {
-      setError('Por favor ingresa tu correo');
+    // Validación básica
+    if (!email) {
+      setError('Por favor ingresa tu correo electrónico');
+      setLoading(false);
+      return;
+    }
+
+    // Validación simple del formato de correo
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Por favor ingresa un correo electrónico válido');
+      setLoading(false);
       return;
     }
 
     try {
+      // Verificar si el email existe en el backend
+      const checkResponse = await fetch(`http://localhost:8080/api/usuarios/check-email?email=${encodeURIComponent(email)}`, {
+        method: 'GET'
+      }).catch(err => {
+        throw new Error('No se pudo conectar con el servidor');
+      });
+
+      if (!checkResponse.ok) {
+        throw new Error('Este correo no está registrado en el sistema');
+      }
+
+      // Enviar magic link a través de Supabase
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
-          emailRedirectTo: 'http://localhost:5173/welcome',
-          shouldCreateUser: false // Esto evita que se creen usuarios automáticamente  // Redirige al usuario después de hacer clic en el Magic Link
+          emailRedirectTo: 'http://localhost:5173/principal',
+          shouldCreateUser: false
         }
       });
 
       if (error) {
-        setError(error.message);
-      } else {
-        setError('');
-        alert('Revisa tu correo para el enlace de login.');
+        throw new Error(error.message);
       }
+
+      setSuccess('Revisa tu correo para el enlace de inicio de sesión');
+      setEmail(''); // Limpiar el campo
     } catch (err) {
-      setError(`Error en el envío del Magic Link: ${err.message}`);
+      setError(err.message || 'Error en la autenticación');
+      console.error('Login error:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    // Lógica de registro (puedes llamar un servicio similar al login)
-    alert("Error en el registro");
-  };
-
   return (
-    <Container maxWidth="xl" sx={{ display: 'flex' }} disableGutters>
+    <Container maxWidth="xl" sx={{ display: 'flex', height: '100vh' }} disableGutters>
       {/* Imagen de la izquierda */}
-      <Box sx={{ display: 'flex', bgcolor: '#B7A8B2', height: '100vh', width: { xs: '0%', md: '50%' }, justifyContent: 'center', alignItems: 'center' }}>
+      <Box sx={{ 
+        display: { xs: 'none', md: 'flex' }, 
+        bgcolor: '#B7A8B2', 
+        width: '50%', 
+        justifyContent: 'center', 
+        alignItems: 'center' 
+      }}>
         <img src={LOGIN_IMG} alt="login_img" style={{ maxWidth: '100%', width: '400px', height: 'auto' }} />
       </Box>
 
-      {/* Formulario de login o registro */}
-      <Box sx={{ height: '100vh', width: { xs: '100%', md: '50%' }, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {
-          isLoginForm ?
-            <Box sx={{ height: '400px', width: '450px', mx: 4 }}>
-              <Stack onSubmit={handleLogin} component='form' direction="column" spacing={3}>
-                <Typography variant="h4" sx={{ textAlign: "center" }}>Iniciar Sesión</Typography>
-                <TextField
-                  name="email"
-                  label="Correo electrónico"
-                  variant="outlined"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  fullWidth
-                />
-  
-                <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Enviar Magic Link</Button>
-              </Stack>
-
-              {/* Mostrar mensaje de error si existe */}
-              {error && <Typography sx={{ color: 'red', textAlign: 'center' }}>{error}</Typography>}
-
-              <Stack>
-                <Typography sx={{ textAlign: "center", mt: 2 }}>
-               ¿Aún no tienes una cuenta? <a href="/register" onClick={(e) => { e.preventDefault(); navigate('/register'); }}>Regístrate aquí</a>
-
-                </Typography> 
-              </Stack>
-            </Box>
-            :
-            <Box sx={{ height: '400px', width: '450px', mx: 4 }}>
-              <Stack onSubmit={handleRegister} component='form' direction="column" spacing={3}>
-                <Typography variant="h4" sx={{ textAlign: "center" }}>Registro</Typography>
-                <TextField name="email" label="Correo electrónico" variant="outlined" fullWidth />
-                <TextField name="password" type="password" label="Contraseña" variant="outlined" fullWidth />
-                <Button type="submit" variant="contained" size="large" sx={{ color: 'white' }}>Registrarme</Button>
-              </Stack>
-              <Typography sx={{ textAlign: "center", mt: 2 }}>
-                ¿Ya tienes una cuenta? <a href="#" onClick={(e) => { e.preventDefault(); setIsLoginForm(true); }}>Inicia sesión aquí</a>
-              </Typography>
-            </Box>
-        }
+      {/* Formulario de login */}
+      <Box sx={{ 
+        width: { xs: '100%', md: '50%' }, 
+        display: 'flex', 
+        flexDirection: 'column',
+        alignItems: 'center', 
+        justifyContent: 'center',
+        p: 3
+      }}>
+        <Paper elevation={3} sx={{ width: '100%', maxWidth: '450px', p: 4, borderRadius: 2 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+            <SecurityIcon sx={{ fontSize: 40, color: 'primary.main', mr: 1 }} />
+            <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
+              Seguridad IA
+            </Typography>
+          </Box>
+          
+          <Typography variant="h5" sx={{ textAlign: "center", mb: 3 }}>
+            Iniciar Sesión
+          </Typography>
+          
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+          
+          <Box component="form" onSubmit={handleLogin}>
+            <TextField
+              name="email"
+              label="Correo electrónico"
+              variant="outlined"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              fullWidth
+              margin="normal"
+              required
+              autoFocus
+              autoComplete="email"
+            />
+            
+            <Button 
+              type="submit" 
+              variant="contained" 
+              size="large" 
+              fullWidth
+              disabled={loading}
+              sx={{ mt: 3, mb: 2, py: 1.5 }}
+            >
+              {loading ? <CircularProgress size={24} /> : 'Enviar Magic Link'}
+            </Button>
+          </Box>
+          
+          <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 3 }}>
+            Se enviará un enlace a tu correo electrónico para iniciar sesión.
+            <br />
+            Si no tienes una cuenta, contacta con el administrador del sistema.
+          </Typography>
+        </Paper>
       </Box>
     </Container>
   );
