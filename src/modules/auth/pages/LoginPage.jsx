@@ -105,7 +105,7 @@ const LoginPage = () => {
           <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
             <SecurityIcon sx={{ fontSize: 40, color: 'primary.main', mr: 1 }} />
             <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-              Seguridad IA
+              Seguridad DT
             </Typography>
           </Box>
           

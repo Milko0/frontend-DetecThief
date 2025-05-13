@@ -16,8 +16,8 @@ import { register } from '../services/authService';
 import { supabase } from '../../../supabaseClient';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -28,6 +28,7 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [currentUserEmail, setCurrentUserEmail] = useState('');
   const navigate = useNavigate();
 
   // Verificar si el usuario actual es administrador
@@ -44,6 +45,9 @@ const RegisterPage = () => {
         const { data: userResponse } = await supabase.auth.getUser();
         
         if (userResponse?.user) {
+          // Guardar el email del usuario actual
+          setCurrentUserEmail(userResponse.user.email);
+          
           // Verificar el rol desde el backend
           const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${userResponse.user.email}`);
           
@@ -70,7 +74,23 @@ const RegisterPage = () => {
     };
     
     checkAdminStatus();
-  }, [navigate]);
+    
+    // Suscribirse a los cambios de autenticación para detectar si cambia la sesión
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Solo reaccionar si ha cambiado el usuario actual
+      if (session?.user?.email !== currentUserEmail && currentUserEmail) {
+        // Forzar a mantener la sesión del administrador
+        checkAdminStatus();
+      }
+    });
+    
+    return () => {
+      // Limpiar el listener al desmontar
+      if (authListener && authListener.subscription) {
+        authListener.subscription.unsubscribe();
+      }
+    };
+  }, [navigate, currentUserEmail]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,6 +131,14 @@ const RegisterPage = () => {
         setEmail('');
         setFirstName('');
         setLastName('');
+        
+        // Asegurarse de que la sesión actual siga siendo la del administrador
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email !== currentUserEmail) {
+          // Si por alguna razón la sesión cambió, volver a iniciar sesión como administrador
+          await supabase.auth.signOut();
+          navigate('/login');
+        }
       } else {
         setError(response.message || 'Error en el registro');
       }

@@ -20,12 +20,16 @@ export const register = async (email, userData) => {
         apellido: userData.lastName
       })
     }); 
+    
     if (!backendResponse.ok) {
       const errorData = await backendResponse.json();
       throw new Error(errorData.message || 'Error registering in backend');
     }
+    
+    // Generar contraseña aleatoria para registro en Supabase
     const randomPassword = generateRandomPassword();
-    // Step 2: Sign up user in Supabase auth system
+    
+    // Step 2: Sign up user in Supabase auth system sin iniciar sesión automáticamente
     const { error } = await supabase.auth.signUp({
       email: email,
       password: randomPassword, 
@@ -34,7 +38,9 @@ export const register = async (email, userData) => {
           nickname: userData.username,
           nombre: userData.firstName,
           apellido: userData.lastName
-        }
+        },
+        emailRedirectTo: 'http://localhost:5173/login',
+        shouldCreateUser: true
       }
     });
 
@@ -75,7 +81,7 @@ export const login = async (email) => {
     const { error } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
-        emailRedirectTo: 'http://localhost:5173/welcome',
+        emailRedirectTo: 'http://localhost:5173/principal',
         shouldCreateUser: false
       }
     });
@@ -99,8 +105,18 @@ export const login = async (email) => {
  * @returns {Promise} - User session data
  */
 export const getCurrentUser = async () => {
-  const { data } = await supabase.auth.getSession();
-  return data.session?.user || null;
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (error) {
+      throw error;
+    }
+    
+    return data.session?.user || null;
+  } catch (error) {
+    console.error('Error getting current user:', error);
+    return null;
+  }
 };
 
 /**
@@ -108,10 +124,16 @@ export const getCurrentUser = async () => {
  * @returns {Promise} - Result of logout operation
  */
 export const logout = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-  return { success: true };
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error during logout:', error);
+    return { success: false, error: error.message };
+  }
 };
+
 /**
  * Utilidad para generar contraseña aleatoria
  */
