@@ -2,7 +2,7 @@
 import React from 'react';
 import { Box, Container, Typography, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
 import Sidebar from '../components/Sidebar';
-
+import Header from '../../auth/components/Header'; // <-- Importación
 
 const dummyIncidentes = [
   { 
@@ -21,44 +21,46 @@ const dummyIncidentes = [
 
 const PrincipalPage = () => {
   return (
-    <Box sx={{ display: 'flex' }}>
-      <Sidebar />
-      <Box component="main" sx={{ flexGrow: 1, p: 4, ml: '240px' }}>
-        <Container maxWidth="lg">
-          <Typography variant="h4" gutterBottom>Pantalla Principal</Typography>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header /> {/* <-- Header agregado */}
+      <Box sx={{ display: 'flex', flexGrow: 1 }}>
+        <Sidebar />
+        <Box component="main" sx={{ flexGrow: 1, p: 4, ml: { xs: 0, md: '240px' } }}>
+          <Container maxWidth="lg">
+            <Typography variant="h4" gutterBottom>Pantalla Principal</Typography>
 
-          <Paper sx={{ p: 3, mb: 4 }}>
-            <Typography variant="h6">Incidentes Recientes</Typography>
-            <List>
-              {dummyIncidentes.map((inc) => (
-                <React.Fragment key={inc.id}>
-                  <ListItem alignItems="flex-start">
-                    <ListItemText
-                      primary={inc.titulo}
-                      secondary={
-                        <>
-                          <Typography variant="body2">{inc.descripcion}</Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Fecha y hora: {new Date(inc.fecha).toLocaleString()}
-                          </Typography>
-                        </>
-                      }
-                    />
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
-              ))}
-            </List>
-          </Paper>
+            <Paper sx={{ p: 3, mb: 4 }}>
+              <Typography variant="h6">Incidentes Recientes</Typography>
+              <List>
+                {dummyIncidentes.map((inc) => (
+                  <React.Fragment key={inc.id}>
+                    <ListItem alignItems="flex-start">
+                      <ListItemText
+                        primary={inc.titulo}
+                        secondary={
+                          <>
+                            <Typography variant="body2">{inc.descripcion}</Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Fecha y hora: {new Date(inc.fecha).toLocaleString()}
+                            </Typography>
+                          </>
+                        }
+                      />
+                    </ListItem>
+                    <Divider />
+                  </React.Fragment>
+                ))}
+              </List>
+            </Paper>
 
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6">Dashboard de Estadísticas</Typography>
-            <Box sx={{ mt: 2 }}>
-             <img src="/assets/dashboard.png" alt="Dashboard" width="100%" />
-
-            </Box>
-          </Paper>
-        </Container>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6">Dashboard de Estadísticas</Typography>
+              <Box sx={{ mt: 2 }}>
+                <img src="/assets/dashboard.png" alt="Dashboard" width="100%" />
+              </Box>
+            </Paper>
+          </Container>
+        </Box>
       </Box>
     </Box>
   );
