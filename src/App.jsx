@@ -12,6 +12,7 @@ import ProfilePage from './modules/auth/pages/ProfilePage';
 import PrincipalPage from './modules/auth/pages/PrincipalPage';
 import MapPage from './modules/auth/pages/MapPage';
 import IncidentPage from './modules/auth/pages/IncidentPage';
+import ConfigurationPage from './modules/auth/pages/ConfigurationPage';
 
 // Componente protector de rutas
 const ProtectedRoute = ({ children }) => {
@@ -92,6 +93,12 @@ const App = () => {
             <IncidentPage />
           </ProtectedRoute>
         } />
+
+        <Route path="/configuracion" element={
+          <ProtectedRoute>
+            <ConfigurationPage/>
+          </ProtectedRoute>
+        }/>
         
         {/* Redirección para cualquier ruta no definida */}
         <Route path="*" element={<Navigate to="/login" replace />} />

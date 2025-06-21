@@ -6,7 +6,7 @@ const IncidentPage = () => {
   const [incident, setIncident] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/incidents/1') // ajusta el ID
+    axios.get('http://localhost:8080/api/incidents/1') // cambiar el numero  ...
       .then(response => setIncident(response.data))
       .catch(error => console.error('Error al cargar incidente', error));
   }, []);

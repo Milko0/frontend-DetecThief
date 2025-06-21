@@ -12,6 +12,7 @@ import {
   Divider
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
 import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import MapIcon from '@mui/icons-material/Map';
@@ -57,6 +58,7 @@ const Sidebar = () => {
   // Menú para administradores
   const adminMenuItems = [
     { text: 'Registrar Usuario', icon: <PersonAddIcon />, route: '/register' },
+    { text: 'Configuración', icon: <SettingsIcon />, route: '/configuracion' }, 
   ];
 
   // Combinamos los menús según el rol

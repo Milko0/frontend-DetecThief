@@ -3,11 +3,12 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import LoginPage from '../modules/auth/pages/LoginPage';
 import WelcomePage from '../modules/auth/pages/WelcomePage';
-import RegisterPage from '../modules/auth/pages/RegisterPage';  // Importar la página de registro
+import RegisterPage from '../modules/auth/pages/RegisterPage';  
 import ProfilePage from '../modules/auth/pages/ProfilePage';
 import PrincipalPage from '../modules/auth/pages/PrincipalPage';
 import MapPage from '../modules/auth/pages/MapPage';
 import IncidentPage from '../modules/auth/pages/IncidentPage';
+import ConfigurationPage from '../modules/auth/pages/ConfigurationPage';
 
 const AppRouter = () => (
   <Router>
@@ -19,6 +20,7 @@ const AppRouter = () => (
       <Route path="/mapa" element={<MapPage />} />
       <Route path="/principal" element={<PrincipalPage />} />
       <Route path="/incidentes" element={<IncidentPage />} />
+      <Route path='/configuracion' element={<ConfigurationPage/>}/>
     </Routes>
   </Router>
 );
