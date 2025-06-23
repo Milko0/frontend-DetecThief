@@ -1,15 +1,13 @@
 // src/modules/auth/components/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
 import {
-  Box, 
-  Drawer, 
-  List, 
-  ListItem, 
+  Box,
+  Drawer,
+  List,
+  ListItem,
   ListItemButton,
-  ListItemIcon, 
-  ListItemText, 
-  Typography,
-  Divider
+  ListItemIcon,
+  ListItemText
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import SettingsIcon from '@mui/icons-material/Settings';
@@ -17,6 +15,7 @@ import ReportProblemIcon from '@mui/icons-material/ReportProblem';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import MapIcon from '@mui/icons-material/Map';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import LocalPhoneIcon from '@mui/icons-material/LocalPhone';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../../../supabaseClient';
 
@@ -29,11 +28,8 @@ const Sidebar = () => {
     const fetchUserRole = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          // Intenta obtener el rol desde el backend
+        if (user?.email) {
           const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${user.email}`);
-          
           if (response.ok) {
             const userData = await response.json();
             setIsAdmin(userData.rol?.toLowerCase() === 'administrador');
@@ -47,24 +43,20 @@ const Sidebar = () => {
     fetchUserRole();
   }, []);
 
-  // Menú base para todos los usuarios
   const baseMenuItems = [
     { text: 'Principal', icon: <DashboardIcon />, route: '/principal' },
     { text: 'Perfil de Usuario', icon: <PersonIcon />, route: '/perfil' },
     { text: 'Incidentes', icon: <ReportProblemIcon />, route: '/incidentes' },
     { text: 'Mapa', icon: <MapIcon />, route: '/mapa' },
+    { text: 'Contacto de Emergencia', icon: <LocalPhoneIcon />, route: '/contacto-emergencia' }
   ];
 
-  // Menú para administradores
   const adminMenuItems = [
     { text: 'Registrar Usuario', icon: <PersonAddIcon />, route: '/register' },
-    { text: 'Configuración', icon: <SettingsIcon />, route: '/configuracion' }, 
+    { text: 'Configuración', icon: <SettingsIcon />, route: '/configuracion' }
   ];
 
-  // Combinamos los menús según el rol
-  const menuItems = isAdmin 
-    ? [...baseMenuItems, ...adminMenuItems] 
-    : baseMenuItems;
+  const menuItems = isAdmin ? [...baseMenuItems, ...adminMenuItems] : baseMenuItems;
 
   return (
     <Drawer
@@ -78,7 +70,7 @@ const Sidebar = () => {
           boxSizing: 'border-box',
           backgroundColor: '#B7A8B2',
           color: '#fff',
-          mt: '64px', // Para dejar espacio para el AppBar
+          mt: '64px',
           pt: 2
         },
       }}
@@ -86,7 +78,7 @@ const Sidebar = () => {
       <List>
         {menuItems.map((item) => (
           <ListItem key={item.text} disablePadding>
-            <ListItemButton 
+            <ListItemButton
               onClick={() => navigate(item.route)}
               selected={location.pathname === item.route}
               sx={{

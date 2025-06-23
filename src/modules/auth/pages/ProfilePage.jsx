@@ -24,7 +24,6 @@ const ProfilePage = () => {
   const [userData, setUserData] = useState(null);
   const [backendUserData, setBackendUserData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [editMode, setEditMode] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const navigate = useNavigate();
 
@@ -35,8 +34,8 @@ const ProfilePage = () => {
         navigate('/login');
         return;
       }
-      
-      const { data: userResponse, error } = await supabase.auth.getUser();
+
+      const { data: userResponse } = await supabase.auth.getUser();
       if (userResponse?.user) {
         setUser(userResponse.user);
         setUserData(userResponse.user.user_metadata || {});
@@ -56,14 +55,13 @@ const ProfilePage = () => {
       }
       setLoading(false);
     };
-    
+
     fetchUser();
   }, [navigate]);
 
   const handleProfileUpdate = (updatedData) => {
     setBackendUserData(updatedData);
-    
-    // Actualizamos también los metadatos de Supabase
+
     const updateSupabaseMetadata = async () => {
       const { error } = await supabase.auth.updateUser({
         data: {
@@ -72,11 +70,10 @@ const ProfilePage = () => {
           apellido: updatedData.apellido
         }
       });
-      
+
       if (error) {
         console.error('Error updating Supabase metadata:', error);
       } else {
-        // Actualizamos el estado local de userData
         setUserData({
           nickname: updatedData.nickname,
           nombre: updatedData.nombre,
@@ -84,9 +81,9 @@ const ProfilePage = () => {
         });
       }
     };
-    
+
     updateSupabaseMetadata();
-    setEditMode(false);
+    setActiveTab(0);
   };
 
   const handleTabChange = (event, newValue) => {
@@ -101,7 +98,6 @@ const ProfilePage = () => {
     );
   }
 
-  // Combinar datos de Supabase y backend
   const displayData = {
     ...userData,
     ...backendUserData,
@@ -119,7 +115,7 @@ const ProfilePage = () => {
               <Tab label="Mi Perfil" />
               <Tab label="Editar Perfil" />
             </Tabs>
-            
+
             {activeTab === 0 ? (
               <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
@@ -132,7 +128,7 @@ const ProfilePage = () => {
                   {displayData?.nickname && (
                     <Typography variant="subtitle1" color="text.secondary">@{displayData.nickname}</Typography>
                   )}
-                  
+
                   <Button 
                     variant="outlined" 
                     startIcon={<EditIcon />} 

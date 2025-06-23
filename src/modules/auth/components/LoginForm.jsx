@@ -1,44 +1,37 @@
-// src/modules/auth/components/LoginForm.jsx
 import React, { useState } from 'react';
-import { login } from '../services/authService'; // Importamos el servicio de login
+import { login } from '../services/authService';
+import { useNavigate } from 'react-router-dom';
+
 const LoginForm = () => {
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
-    setSuccess('');
 
-    // Validación básica
     if (!email) {
       setError('Por favor ingresa tu correo electrónico');
-      setLoading(false);
       return;
     }
 
-    // Validación simple del formato de correo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Por favor ingresa un correo electrónico válido');
-      setLoading(false);
       return;
     }
 
     try {
       const response = await login(email);
-      setSuccess(response.message);
-      // Limpiar el campo después de un login exitoso
+      alert(response.message || 'Correo enviado');
       setEmail('');
-    } catch (error) {
-      setError(error.message || 'Error en la autenticación');
-      console.error('Login error:', error);
-    } finally {
-      setLoading(false);
+      // Esperar que el usuario haga click en el magic link
+      // El redirect del magic link debe ir a /principal
+      navigate('/principal');
+    } catch (err) {
+      setError(err.message || 'Error en la autenticación');
+      console.error('Login error:', err);
     }
   };
 
@@ -55,8 +48,8 @@ const LoginForm = () => {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-        </div> 
-        <button type="submit">Login</button>
+        </div>
+        <button type="submit">Enviar Magic Link</button>
       </form>
     </div>
   );

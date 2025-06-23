@@ -6,13 +6,11 @@ import {
   TextField, 
   Box, 
   Container, 
-  Stack, 
   Paper,
   Alert,
   CircularProgress
 } from "@mui/material";
-import LOGIN_IMG from '../../../assets/imagen_login.svg';  // Asegúrate de tener la imagen en la carpeta correcta
-import { useNavigate } from "react-router-dom";
+import LOGIN_IMG from '../../../assets/imagen_login.svg';
 import { supabase } from '../../../supabaseClient.js';
 import SecurityIcon from '@mui/icons-material/Security';
 
@@ -21,7 +19,6 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -29,14 +26,12 @@ const LoginPage = () => {
     setError('');
     setSuccess('');
 
-    // Validación básica
     if (!email) {
       setError('Por favor ingresa tu correo electrónico');
       setLoading(false);
       return;
     }
 
-    // Validación simple del formato de correo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Por favor ingresa un correo electrónico válido');
@@ -45,10 +40,9 @@ const LoginPage = () => {
     }
 
     try {
-      // Verificar si el email existe en el backend
       const checkResponse = await fetch(`http://localhost:8080/api/usuarios/check-email?email=${encodeURIComponent(email)}`, {
         method: 'GET'
-      }).catch(err => {
+      }).catch(() => {
         throw new Error('No se pudo conectar con el servidor');
       });
 
@@ -56,7 +50,6 @@ const LoginPage = () => {
         throw new Error('Este correo no está registrado en el sistema');
       }
 
-      // Enviar magic link a través de Supabase
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
@@ -70,10 +63,10 @@ const LoginPage = () => {
       }
 
       setSuccess('Revisa tu correo para el enlace de inicio de sesión');
-      setEmail(''); // Limpiar el campo
-    } catch (err) {
-      setError(err.message || 'Error en la autenticación');
-      console.error('Login error:', err);
+      setEmail('');
+    } catch (e) {
+      setError(e.message || 'Error en la autenticación');
+      console.error('Login error:', e);
     } finally {
       setLoading(false);
     }

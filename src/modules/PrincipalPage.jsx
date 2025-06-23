@@ -1,8 +1,8 @@
-// src/modules/main/pages/PrincipalPage.js
+// src/modules/pages/PrincipalPage.js
 import React from 'react';
 import { Box, Container, Typography, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
-import Sidebar from '../components/Sidebar';
-import Header from '../../auth/components/Header'; // <-- Importación
+import Sidebar from './auth/components/Sidebar';
+import Header from './auth/components/Header'; // <-- Importación
 
 const dummyIncidentes = [
   { 
