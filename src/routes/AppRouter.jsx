@@ -1,23 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
-import {
-  CircularProgress,
-  Box
-} from '@mui/material';
+import { CircularProgress, Box } from '@mui/material';
 
-// Páginas
+// Páginas públicas
 import LoginPage from '../modules/auth/pages/LoginPage';
 import WelcomePage from '../modules/auth/pages/WelcomePage';
+
+// Páginas protegidas
 import RegisterPage from '../modules/auth/pages/RegisterPage';
 import ProfilePage from '../modules/auth/pages/ProfilePage';
 import PrincipalPage from '../modules/PrincipalPage';
 import MapPage from '../modules/auth/pages/MapPage';
-import IncidentPage from '../modules/auth/pages/IncidentPage';
+import IncidentPage from '../modules/auth/pages/IncidentPendientesPage.jsx';
+import IncidentPendientesPage from '../modules/auth/pages/IncidentPendientesPage.jsx'; // ✅ NUEVA
 import ConfigurationPage from '../modules/auth/pages/ConfigurationPage';
 import ContactoEmergenciaPage from '../modules/auth/pages/ContactoEmergenciaPage';
 
-// Ruta protegida
+// Componente de ruta protegida
 const ProtectedRoute = ({ children }) => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,27 +48,29 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!session) return <Navigate to="/login" replace />;
-
   return children;
 };
 
+// Enrutador principal
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* públicas */}
+        {/* Rutas públicas */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
 
-        {/* protegidas */}
+        {/* Rutas protegidas */}
         <Route path="/register" element={<ProtectedRoute><RegisterPage /></ProtectedRoute>} />
         <Route path="/perfil" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/principal" element={<ProtectedRoute><PrincipalPage /></ProtectedRoute>} />
         <Route path="/mapa" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
         <Route path="/incidentes" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
+        <Route path="/incidentes/pendientes" element={<ProtectedRoute><IncidentPendientesPage /></ProtectedRoute>} /> {/* ✅ Nueva ruta */}
         <Route path="/configuracion" element={<ProtectedRoute><ConfigurationPage /></ProtectedRoute>} />
         <Route path="/contacto-emergencia" element={<ProtectedRoute><ContactoEmergenciaPage /></ProtectedRoute>} />
 
+        {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
