@@ -1,63 +1,58 @@
-// src/modules/pages/PrincipalPage.js
-import React from 'react';
-import { Box, Container, Typography, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
-import Sidebar from './auth/components/Sidebar';
-import Header from './auth/components/Header'; // <-- Importación
-
-const dummyIncidentes = [
-  { 
-    id: 1, 
-    titulo: 'Robo en el laboratorio', 
-    descripcion: 'Se reportó un robo en el laboratorio de informática.', 
-    fecha: '2025-05-11T09:30:00'
-  },
-  { 
-    id: 2, 
-    titulo: 'Puerta forzada', 
-    descripcion: 'La puerta del aula 204 fue encontrada forzada.', 
-    fecha: '2025-05-10T18:15:00'
-  },
-];
+// src/modules/pages/PrincipalPage.jsx
+import React from "react";
+import { Box, Container, Typography, Paper, Divider, Grid } from "@mui/material";
+import Sidebar from "./auth/components/Sidebar";
+import Header from "./auth/components/Header";
+import DashboardCharts from "./auth/components/DashboardCharts";
 
 const PrincipalPage = () => {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-      <Header /> {/* <-- Header agregado */}
-      <Box sx={{ display: 'flex', flexGrow: 1 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <Header />
+      <Box sx={{ display: "flex", flexGrow: 1 }}>
         <Sidebar />
-        <Box component="main" sx={{ flexGrow: 1, p: 4, ml: { xs: 0, md: '240px' } }}>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 4,
+            ml: { xs: 0, md: "240px" },
+            backgroundColor: "#f4f6f8",
+          }}
+        >
           <Container maxWidth="lg">
-            <Typography variant="h4" gutterBottom>Pantalla Principal</Typography>
+            <Typography variant="h4" gutterBottom>
+              Pantalla Principal
+            </Typography>
 
-            <Paper sx={{ p: 3, mb: 4 }}>
-              <Typography variant="h6">Incidentes Recientes</Typography>
-              <List>
-                {dummyIncidentes.map((inc) => (
-                  <React.Fragment key={inc.id}>
-                    <ListItem alignItems="flex-start">
-                      <ListItemText
-                        primary={inc.titulo}
-                        secondary={
-                          <>
-                            <Typography variant="body2">{inc.descripcion}</Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Fecha y hora: {new Date(inc.fecha).toLocaleString()}
-                            </Typography>
-                          </>
-                        }
-                      />
-                    </ListItem>
-                    <Divider />
-                  </React.Fragment>
-                ))}
-              </List>
-            </Paper>
+            <Paper elevation={4} sx={{ p: 4, mb: 4 }}>
+              <Typography variant="h6" gutterBottom>
+                📊 Dashboard de Estadísticas
+              </Typography>
+              <Divider sx={{ mb: 3 }} />
 
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6">Dashboard de Estadísticas</Typography>
-              <Box sx={{ mt: 2 }}>
-                <img src="/assets/dashboard.png" alt="Dashboard" width="100%" />
-              </Box>
+              <Grid container spacing={4}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Incidentes por Tipo
+                  </Typography>
+                  <DashboardCharts chart="bar" />
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Distribución de Estados
+                  </Typography>
+                  <DashboardCharts chart="pie" />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    Tendencia Semanal
+                  </Typography>
+                  <DashboardCharts chart="line" />
+                </Grid>
+              </Grid>
             </Paper>
           </Container>
         </Box>
@@ -67,4 +62,3 @@ const PrincipalPage = () => {
 };
 
 export default PrincipalPage;
-

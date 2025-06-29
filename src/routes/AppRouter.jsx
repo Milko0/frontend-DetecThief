@@ -16,6 +16,8 @@ import IncidentPage from '../modules/auth/pages/IncidentPendientesPage.jsx';
 import IncidentPendientesPage from '../modules/auth/pages/IncidentPendientesPage.jsx'; // ✅ NUEVA
 import ConfigurationPage from '../modules/auth/pages/ConfigurationPage';
 import ContactoEmergenciaPage from '../modules/auth/pages/ContactoEmergenciaPage';
+import IncidentHistorialPage from '../modules/auth/pages/IncidentHistorialPage';
+
 
 // Componente de ruta protegida
 const ProtectedRoute = ({ children }) => {
@@ -66,7 +68,9 @@ const AppRouter = () => {
         <Route path="/principal" element={<ProtectedRoute><PrincipalPage /></ProtectedRoute>} />
         <Route path="/mapa" element={<ProtectedRoute><MapPage /></ProtectedRoute>} />
         <Route path="/incidentes" element={<ProtectedRoute><IncidentPage /></ProtectedRoute>} />
-        <Route path="/incidentes/pendientes" element={<ProtectedRoute><IncidentPendientesPage /></ProtectedRoute>} /> {/* ✅ Nueva ruta */}
+        <Route path="/incidentes/pendientes" element={<ProtectedRoute><IncidentPendientesPage /></ProtectedRoute>} />
+        <Route path="/incidentes/historial" element={<ProtectedRoute><IncidentHistorialPage /></ProtectedRoute>} />
+
         <Route path="/configuracion" element={<ProtectedRoute><ConfigurationPage /></ProtectedRoute>} />
         <Route path="/contacto-emergencia" element={<ProtectedRoute><ContactoEmergenciaPage /></ProtectedRoute>} />
 
