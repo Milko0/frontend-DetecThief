@@ -1,37 +1,95 @@
-import React, { useState } from 'react';
-import { 
-  Box, Container, Typography, Paper, TextField, Button, List, ListItem, 
-  ListItemText, Divider, Stack 
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import {
+  Box, Container, Typography, Paper, TextField, Button, List, ListItem,
+  ListItemText, Divider, Stack, Alert
 } from '@mui/material';
 import Sidebar from '../components/Sidebar';
 import Header from '../../auth/components/Header';
 
+const API_URL = 'http://localhost:8083/api/cameras';
+
 const ConfigurationPage = () => {
   const [camaras, setCamaras] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
-  const [nuevaCamara, setNuevaCamara] = useState('');
-  const [nuevoUsuario, setNuevoUsuario] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [ubicacion, setUbicacion] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const agregarCamara = () => {
-    if (nuevaCamara.trim()) {
-      setCamaras([...camaras, nuevaCamara.trim()]);
-      setNuevaCamara('');
+  useEffect(() => {
+    fetchCamaras();
+  }, []);
+
+  const fetchCamaras = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      setCamaras(response.data);
+    } catch (error) {
+      console.error('Error al obtener cámaras:', error);
+      setErrorMessage('Error al obtener cámaras.');
     }
   };
 
-  const quitarCamara = (nombre) => {
-    setCamaras(camaras.filter(c => c !== nombre));
-  };
+  const agregarCamara = async () => {
+    if (!nombre.trim() || !ubicacion.trim()) {
+      setErrorMessage('Debes completar los campos nombre y ubicación.');
+      setSuccessMessage('');
+      return;
+    }
 
-  const agregarUsuario = () => {
-    if (nuevoUsuario.trim()) {
-      setUsuarios([...usuarios, nuevoUsuario.trim()]);
-      setNuevoUsuario('');
+    const body = {
+      name: nombre.trim(),
+      location: ubicacion.trim(),
+      description: '',
+      urlStream: nombre.trim().toLowerCase()
+    };
+
+    try {
+      const response = await axios.post(API_URL, body);
+      console.log("✅ Cámara guardada:", response.data);
+      setNombre('');
+      setUbicacion('');
+      setErrorMessage('');
+      setSuccessMessage('Cámara agregada correctamente ✅');
+      fetchCamaras();
+
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('❌ Error al agregar cámara:', error);
+      if (error.response?.data) {
+        setErrorMessage('Error al agregar la cámara: ' + (error.response.data.message || 'Datos inválidos.'));
+      } else {
+        setErrorMessage('Error al conectar con el servidor.');
+      }
+      setSuccessMessage('');
     }
   };
 
-  const quitarUsuario = (nombre) => {
-    setUsuarios(usuarios.filter(u => u !== nombre));
+  const quitarCamara = async (id) => {
+    try {
+      await axios.delete(`${API_URL}/${id}`);
+      fetchCamaras();
+    } catch (error) {
+      console.error('Error al eliminar cámara:', error);
+    }
+  };
+
+  const desactivarCamara = async (id) => {
+    try {
+      await axios.post(`${API_URL}/${id}/deactivate`);
+      fetchCamaras();
+    } catch (error) {
+      console.error('Error al desactivar cámara:', error);
+    }
+  };
+
+  const activarCamara = async (id) => {
+    try {
+      await axios.post(`${API_URL}/${id}/activate`);
+      fetchCamaras();
+    } catch (error) {
+      console.error('Error al activar cámara:', error);
+    }
   };
 
   return (
@@ -43,64 +101,70 @@ const ConfigurationPage = () => {
           <Container maxWidth="lg">
             <Typography variant="h4" gutterBottom>Configuración</Typography>
 
-            {/* Gestión de Cámaras */}
             <Paper sx={{ p: 3, mb: 4 }}>
               <Typography variant="h6">Gestionar Cámaras</Typography>
-              <Stack direction="row" spacing={2} mt={2} mb={2}>
+
+              {errorMessage && (
+                <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
+                  {errorMessage}
+                </Alert>
+              )}
+
+              {successMessage && (
+                <Alert severity="success" sx={{ mt: 2, mb: 2 }}>
+                  {successMessage}
+                </Alert>
+              )}
+
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mt={2} mb={2}>
                 <TextField
-                  label="ID o nombre de la cámara"
-                  variant="outlined"
+                  label="Nombre"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
                   fullWidth
-                  value={nuevaCamara}
-                  onChange={(e) => setNuevaCamara(e.target.value)}
+                />
+                <TextField
+                  label="Ubicación"
+                  value={ubicacion}
+                  onChange={(e) => setUbicacion(e.target.value)}
+                  fullWidth
                 />
                 <Button variant="contained" onClick={agregarCamara}>Agregar</Button>
               </Stack>
+
               <List>
-                {camaras.map((cam, index) => (
-                  <React.Fragment key={index}>
+                {camaras.map((cam) => (
+                  <React.Fragment key={cam.id}>
                     <ListItem
                       secondaryAction={
-                        <Button color="error" onClick={() => quitarCamara(cam)}>Quitar</Button>
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            variant="outlined"
+                            color={cam.status === 'activo' ? 'warning' : 'success'}
+                            onClick={() =>
+                              cam.status === 'activo'
+                                ? desactivarCamara(cam.id)
+                                : activarCamara(cam.id)
+                            }
+                          >
+                            {cam.status === 'activo' ? 'Desactivar' : 'Activar'}
+                          </Button>
+                          <Button color="error" onClick={() => quitarCamara(cam.id)}>
+                            Quitar
+                          </Button>
+                        </Stack>
                       }
                     >
-                      <ListItemText primary={cam} />
+                      <ListItemText
+                        primary={`📷 ${cam.name}`}
+                        secondary={`Ubicación: ${cam.location} — Estado: ${cam.status}`}
+                      />
                     </ListItem>
                     <Divider />
                   </React.Fragment>
                 ))}
               </List>
             </Paper>
-
-            {/* Gestión de Usuarios */}
-            <Paper sx={{ p: 3 }}>
-              <Typography variant="h6">Gestionar Usuarios</Typography>
-              <Stack direction="row" spacing={2} mt={2} mb={2}>
-                <TextField
-                  label="ID o nombre del usuario"
-                  variant="outlined"
-                  fullWidth
-                  value={nuevoUsuario}
-                  onChange={(e) => setNuevoUsuario(e.target.value)}
-                />
-                <Button variant="contained" onClick={agregarUsuario}>Agregar</Button>
-              </Stack>
-              <List>
-                {usuarios.map((user, index) => (
-                  <React.Fragment key={index}>
-                    <ListItem
-                      secondaryAction={
-                        <Button color="error" onClick={() => quitarUsuario(user)}>Quitar</Button>
-                      }
-                    >
-                      <ListItemText primary={user} />
-                    </ListItem>
-                    <Divider />
-                  </React.Fragment>
-                ))}
-              </List>
-            </Paper>
-
           </Container>
         </Box>
       </Box>
@@ -109,3 +173,5 @@ const ConfigurationPage = () => {
 };
 
 export default ConfigurationPage;
+
+

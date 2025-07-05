@@ -30,19 +30,16 @@ export const register = async (email, userData) => {
     const randomPassword = generateRandomPassword();
     
     // Step 2: Sign up user in Supabase auth system sin iniciar sesión automáticamente
-    const { error } = await supabase.auth.signUp({
-      email: email,
-      password: randomPassword, 
-      options: {
-        data: {
-          nickname: userData.username,
-          nombre: userData.firstName,
-          apellido: userData.lastName
-        },
-        emailRedirectTo: 'http://localhost:5173/login',
-        shouldCreateUser: true
-      }
-    });
+   const { error } = await supabase.auth.admin.createUser({
+  email: email,
+  password: randomPassword,
+  user_metadata: {
+    nickname: userData.username,
+    nombre: userData.firstName,
+    apellido: userData.lastName
+  },
+  email_confirm: true
+});
 
     if (error) {
       throw new Error(`Supabase Auth Error: ${error.message}`);

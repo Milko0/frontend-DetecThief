@@ -1,14 +1,13 @@
 // src/modules/auth/components/DashboardCharts.jsx
-import React from "react";
-import { Bar, Pie, Line } from "react-chartjs-2";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import { Bar, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
   BarElement,
   ArcElement,
-  PointElement,
-  LineElement,
   Tooltip,
   Legend,
 } from "chart.js";
@@ -18,52 +17,97 @@ ChartJS.register(
   LinearScale,
   BarElement,
   ArcElement,
-  PointElement,
-  LineElement,
   Tooltip,
   Legend
 );
 
-const DashboardCharts = ({ chart }) => {
-  const barData = {
-    labels: ["Robo", "Vandalismo", "Emergencias", "Otros"],
-    datasets: [
-      {
-        label: "Incidentes por tipo",
-        data: [12, 9, 5, 3],
-        backgroundColor: ["#1976d2", "#dc004e", "#ff9800", "#9c27b0"],
-      },
-    ],
-  };
+const DashboardCharts = () => {
+  const [barData, setBarData] = useState({
+    labels: [],
+    datasets: [],
+  });
 
-  const pieData = {
-    labels: ["Resueltos", "Pendientes", "Descartados"],
-    datasets: [
-      {
-        data: [15, 6, 3],
-        backgroundColor: ["#4caf50", "#ffc107", "#f44336"],
-      },
-    ],
-  };
+  const [doughnutData, setDoughnutData] = useState({
+    labels: [],
+    datasets: [],
+  });
 
-  const lineData = {
-    labels: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
-    datasets: [
-      {
-        label: "Incidentes diarios",
-        data: [2, 4, 3, 5, 1],
-        borderColor: "#3f51b5",
-        backgroundColor: "rgba(63, 81, 181, 0.2)",
-        tension: 0.3,
-      },
-    ],
-  };
+  useEffect(() => {
+    axios
+      .get("http://localhost:8082/api/incidents/historial/with-type")
+      .then((response) => {
+        const data = response.data;
 
-  if (chart === "bar") return <Bar data={barData} />;
-  if (chart === "pie") return <Pie data={pieData} />;
-  if (chart === "line") return <Line data={lineData} />;
+        // Agrupar por tipo de incidente
+        const tipoCounts = {};
+        const estadoCounts = {};
 
-  return null;
+        data.forEach((item) => {
+          // Conteo por tipo de incidente
+          const tipo = item.tipoIncidenteNombre || "Desconocido";
+          tipoCounts[tipo] = (tipoCounts[tipo] || 0) + 1;
+
+          // Conteo por estado del sistema
+          const estado = item.estadoSistema || "desconocido";
+          estadoCounts[estado] = (estadoCounts[estado] || 0) + 1;
+        });
+
+        // Datos para gráfico de barras
+        const tipoLabels = Object.keys(tipoCounts);
+        const tipoValues = Object.values(tipoCounts);
+        setBarData({
+          labels: tipoLabels,
+          datasets: [
+            {
+              label: "Incidentes por tipo",
+              data: tipoValues,
+              backgroundColor: [
+                "#1976d2",
+                "#dc004e",
+                "#ff9800",
+                "#9c27b0",
+                "#00acc1",
+                "#66bb6a",
+                "#e91e63",
+                "#3f51b5",
+              ],
+            },
+          ],
+        });
+
+        // Datos para gráfico de dona
+        const estadoLabels = Object.keys(estadoCounts);
+        const estadoValues = Object.values(estadoCounts);
+        setDoughnutData({
+          labels: estadoLabels,
+          datasets: [
+            {
+              label: "Estados de incidentes",
+              data: estadoValues,
+              backgroundColor: [
+                "#4caf50", // resuelto
+                "#ffc107", // pendiente
+                "#f44336", // descartado
+                "#9e9e9e", // desconocido u otro
+              ],
+            },
+          ],
+        });
+      })
+      .catch((error) => {
+        console.error("Error al obtener los datos de incidentes:", error);
+      });
+  }, []);
+
+  return (
+    <div>
+      <h3>📊 Incidentes por Tipo</h3>
+      <Bar data={barData} />
+
+      <h3 style={{ marginTop: "40px" }}>🧾 Estados de los Incidentes</h3>
+      <Doughnut data={doughnutData} />
+    </div>
+  );
 };
 
 export default DashboardCharts;

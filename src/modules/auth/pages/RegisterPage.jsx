@@ -16,8 +16,8 @@ import { register } from '../services/authService';
 import { supabase } from '../../../supabaseClient';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
-
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -28,36 +28,24 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [currentUserEmail, setCurrentUserEmail] = useState('');
   const navigate = useNavigate();
 
-  // Verificar si el usuario actual es administrador
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        
         if (!session) {
           navigate('/login');
           return;
         }
-        
+
         const { data: userResponse } = await supabase.auth.getUser();
-        
         if (userResponse?.user) {
-          // Guardar el email del usuario actual
-          setCurrentUserEmail(userResponse.user.email);
-          
-          // Verificar el rol desde el backend
           const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${userResponse.user.email}`);
-          
           if (response.ok) {
             const userData = await response.json();
             const userIsAdmin = userData.rol?.toLowerCase() === 'administrador';
-            
             setIsAdmin(userIsAdmin);
-            
-            // Redirigir si no es administrador
             if (!userIsAdmin) {
               navigate('/principal');
             }
@@ -72,25 +60,20 @@ const RegisterPage = () => {
         setCheckingAuth(false);
       }
     };
-    
+
     checkAdminStatus();
-    
-    // Suscribirse a los cambios de autenticación para detectar si cambia la sesión
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // Solo reaccionar si ha cambiado el usuario actual
-      if (session?.user?.email !== currentUserEmail && currentUserEmail) {
-        // Forzar a mantener la sesión del administrador
-        checkAdminStatus();
-      }
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      // Solo informativo, ya no cerramos sesión
+      console.log("Cambio de sesión detectado", event, session);
     });
-    
+
     return () => {
-      // Limpiar el listener al desmontar
       if (authListener && authListener.subscription) {
         authListener.subscription.unsubscribe();
       }
     };
-  }, [navigate, currentUserEmail]);
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -98,14 +81,12 @@ const RegisterPage = () => {
     setError('');
     setSuccess('');
 
-    // Validación básica
     if (!username || !email || !firstName || !lastName) {
       setError('Todos los campos son obligatorios.');
       setLoading(false);
       return;
     }
 
-    // Validación simple del formato de correo
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError('Por favor ingresa un correo electrónico válido');
@@ -114,31 +95,15 @@ const RegisterPage = () => {
     }
 
     try {
-      // Utilizar la función register del authService
-      const userData = {
-        username,
-        firstName,
-        lastName
-      };
-
+      const userData = { username, firstName, lastName };
       const response = await register(email, userData);
 
       if (response.success) {
         setSuccess(response.message);
-
-        // Limpiar el formulario después de un registro exitoso
         setUsername('');
         setEmail('');
         setFirstName('');
         setLastName('');
-        
-        // Asegurarse de que la sesión actual siga siendo la del administrador
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user?.email !== currentUserEmail) {
-          // Si por alguna razón la sesión cambió, volver a iniciar sesión como administrador
-          await supabase.auth.signOut();
-          navigate('/login');
-        }
       } else {
         setError(response.message || 'Error en el registro');
       }
@@ -159,7 +124,7 @@ const RegisterPage = () => {
   }
 
   if (!isAdmin) {
-    return null; // No debería mostrarse porque se redirecciona antes
+    return null;
   }
 
   return (
@@ -174,10 +139,10 @@ const RegisterPage = () => {
                 <PersonAddIcon color="primary" sx={{ fontSize: 32, mr: 1 }} />
                 <Typography variant="h5">Registrar Nuevo Usuario</Typography>
               </Box>
-              
+
               {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
               {success && <Alert severity="success" sx={{ mb: 3 }}>{success}</Alert>}
-              
+
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={2}>
                   <Grid item xs={12}>

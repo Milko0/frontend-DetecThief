@@ -36,21 +36,7 @@ const PrincipalPage = () => {
                   <Typography variant="subtitle1" gutterBottom>
                     Incidentes por Tipo
                   </Typography>
-                  <DashboardCharts chart="bar" />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Distribución de Estados
-                  </Typography>
-                  <DashboardCharts chart="pie" />
-                </Grid>
-
-                <Grid item xs={12}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Tendencia Semanal
-                  </Typography>
-                  <DashboardCharts chart="line" />
+                  <DashboardCharts />
                 </Grid>
               </Grid>
             </Paper>
@@ -62,3 +48,4 @@ const PrincipalPage = () => {
 };
 
 export default PrincipalPage;
+
