@@ -1,45 +1,27 @@
-// src/modules/auth/pages/IncidentHistorialPage.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
   Paper,
   Grid,
   Divider,
-  TextField,
-  MenuItem,
-} from "@mui/material";
-import { obtenerIncidentes } from "../../auth/services/incidentService";
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
-
-const estadosDisponibles = ["resuelto", "descartado", "validado"];
+  Tooltip,
+  Container,
+} from '@mui/material';
+import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
+import { obtenerHistorialIncidentes } from '../../auth/services/incidentService';
 
 const IncidentHistorialPage = () => {
   const [historial, setHistorial] = useState([]);
-  const [filtroEstado, setFiltroEstado] = useState("");
-  const [filtroTexto, setFiltroTexto] = useState("");
 
   const cargarHistorial = async () => {
     try {
-      const data = await obtenerIncidentes();
-      const filtrados = data.filter((i) =>
-        estadosDisponibles.includes(i.estado.toLowerCase())
-      );
-      setHistorial(filtrados);
+      const data = await obtenerHistorialIncidentes();
+      setHistorial(data);
     } catch (error) {
-      console.error("Error al cargar el historial", error);
+      console.error('Error al cargar historial de incidentes', error);
     }
-  };
-
-  const aplicarFiltros = () => {
-    return historial.filter((i) => {
-      const coincideEstado = filtroEstado ? i.estado.toLowerCase() === filtroEstado : true;
-      const coincideTexto = filtroTexto
-        ? i.descripcion.toLowerCase().includes(filtroTexto.toLowerCase())
-        : true;
-      return coincideEstado && coincideTexto;
-    });
   };
 
   useEffect(() => {
@@ -47,97 +29,55 @@ const IncidentHistorialPage = () => {
   }, []);
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
-      <Box sx={{ display: "flex", flexGrow: 1 }}>
+      <Box sx={{ display: 'flex', flexGrow: 1 }}>
         <Sidebar />
-        <Box component="main" sx={{ flexGrow: 1, p: 4, ml: { xs: 0, md: "240px" } }}>
-          <Typography variant="h4" gutterBottom>Historial de Incidentes</Typography>
-          <Divider sx={{ mb: 3 }} />
+        <Box component="main" sx={{ flexGrow: 1, p: 4, ml: { xs: 0, md: '240px' } }}>
+          <Container maxWidth="lg">
+            <Typography variant="h4" gutterBottom>Historial de Incidentes</Typography>
+            <Divider sx={{ mb: 3 }} />
 
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Buscar por descripción"
-                variant="outlined"
-                value={filtroTexto}
-                onChange={(e) => setFiltroTexto(e.target.value)}
-              />
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                select
-                fullWidth
-                label="Filtrar por estado"
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                {estadosDisponibles.map((estado) => (
-                  <MenuItem key={estado} value={estado}>
-                    {estado.charAt(0).toUpperCase() + estado.slice(1)}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-          </Grid>
-
-          {aplicarFiltros().length === 0 ? (
-            <Typography>No hay incidentes con esos filtros.</Typography>
-          ) : (
-            <Grid container spacing={3}>
-              {aplicarFiltros().map((i) => (
-                <Grid item xs={12} md={6} key={i.id}>
-                  <Paper
-                    elevation={3}
-                    sx={{
-                      p: 2,
-                      backgroundColor: "#fdfdfd",
-                      "&:hover": { backgroundColor: "#f2f2f2" },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            {historial.length === 0 ? (
+              <Typography>No hay historial disponible.</Typography>
+            ) : (
+              <Grid container spacing={3}>
+                {historial.map((item) => (
+                  <Grid item xs={12} sm={10} md={6} lg={5} key={item.id}>
+                    <Paper elevation={3} sx={{ p: 2 }}>
                       <Typography variant="subtitle2" color="primary">
-                        #{i.id} | Cámara {i.cameraId}
+                        #{item.id} - Tipo ID: {item.tipoIncidentId}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Tipo de incidente ID: {i.tipoIncidentId}
-                      </Typography>
-                      <Typography>{i.descripcion}</Typography>
+                      <Typography variant="body2">{item.comentario}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Detectado: {new Date(i.fechaDetectado).toLocaleString()}
+                        Estado: {item.estadoSistema}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Estado del sistema: <strong>{i.estadoSistema}</strong>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Fecha de Cambio: {new Date(item.fechaCambio).toLocaleString()}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Estado: <strong>{i.estado}</strong>
+                      <Typography variant="caption" color="text.secondary" display="block">
+                        Contactos Notificados: {item.contactosNotificados || 'Ninguno'}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Creado en: {new Date(i.creadoEn).toLocaleString()}
-                      </Typography>
-
-                      {i.imagenReferencia && (
+                      {item.evidencia_referencial && (
                         <Box
                           component="img"
-                          src={i.imagenReferencia}
-                          alt="Referencia"
+                          src={item.evidencia_referencial}
+                          alt="Evidencia"
                           sx={{
                             mt: 1,
-                            borderRadius: 1,
+                            width: '100%',
                             maxHeight: 200,
-                            objectFit: "cover",
-                            width: "100%",
+                            objectFit: 'cover',
+                            borderRadius: 1,
                           }}
                         />
                       )}
-                    </Box>
-                  </Paper>
-                </Grid>
-              ))}
-            </Grid>
-          )}
+                    </Paper>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Container>
         </Box>
       </Box>
     </Box>
