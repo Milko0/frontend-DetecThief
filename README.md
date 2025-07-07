@@ -6,14 +6,14 @@ Bienvenido al repositorio del frontend de **DetecThief** 🚔, una aplicación w
 
 ## 📋 Tabla de Contenidos
 
-- [Descripción](#descripción)
-- [Características](#características)
-- [Tecnologías Utilizadas](#tecnologías-utilizadas)
-- [Instalación](#instalación)
-- [Uso](#uso)
-- [Estructura del Proyecto](#estructura-del-proyecto)
-- [Contribuir](#contribuir)
-- [Licencia](#licencia) 
+- [Descripción](#-descripción)
+- [Características](#-características)
+- [Tecnologías Utilizadas](#%EF%B8%8F-tecnologías-utilizadas)
+- [Instalación](#-instalación)
+- [Uso](#-uso)
+- [Estructura del Proyecto](#%EF%B8%8F-estructura-del-proyecto)
+- [Contribuir](#-contribuir)
+- [Licencia](#-licencia) 
 
 ---
 
