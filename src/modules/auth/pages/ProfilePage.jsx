@@ -42,7 +42,7 @@ const ProfilePage = () => {
         
         // Obtener datos del usuario desde el backend
         try {
-          const backendResponse = await fetch(`http://localhost:8080/api/usuarios/by-email/${userResponse.user.email}`);
+          const backendResponse = await fetch(`https://user-service-p40l.onrender.com/api/usuarios/by-email/${userResponse.user.email}`);
           if (backendResponse.ok) {
             const backendData = await backendResponse.json();
             setBackendUserData(backendData);

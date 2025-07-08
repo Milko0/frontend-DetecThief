@@ -36,7 +36,7 @@ const ProfileEditForm = ({ userData, userEmail, onProfileUpdate }) => {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${userEmail}`, {
+      const response = await fetch(`https://user-service-p40l.onrender.com/api/usuarios/by-email/${userEmail}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

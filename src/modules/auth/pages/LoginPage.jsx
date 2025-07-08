@@ -40,7 +40,7 @@ const LoginPage = () => {
     }
 
     try {
-      const checkResponse = await fetch(`http://localhost:8080/api/usuarios/check-email?email=${encodeURIComponent(email)}`, {
+      const checkResponse = await fetch(`https://user-service-p40l.onrender.com/api/usuarios/check-email?email=${encodeURIComponent(email)}`, {
         method: 'GET'
       }).catch(() => {
         throw new Error('No se pudo conectar con el servidor');
@@ -53,7 +53,7 @@ const LoginPage = () => {
       const { error } = await supabase.auth.signInWithOtp({
         email: email,
         options: {
-          emailRedirectTo: 'http://localhost:5173/principal',
+          emailRedirectTo: 'https://proyectovercel-one.vercel.app/principal',
           shouldCreateUser: false
         }
       });

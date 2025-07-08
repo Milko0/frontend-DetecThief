@@ -7,9 +7,9 @@ import {
 import Sidebar from '../components/Sidebar';
 import Header from '../../auth/components/Header';
 
-const API_URL = 'http://localhost:8083/api/cameras';
+const API_URL = 'https://backend-detecthief.onrender.com/api/cameras';
 
-const ConfigurationPage = () => {
+const ConfigurationPage = () => {q
   const [camaras, setCamaras] = useState([]);
   const [nombre, setNombre] = useState('');
   const [ubicacion, setUbicacion] = useState('');

@@ -34,7 +34,7 @@ const DashboardCharts = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8082/api/incidents/historial/with-type")
+      .get("https://incident-service-rlrr.onrender.com/api/incidents/historial/with-type")
       .then((response) => {
         const data = response.data;
 

@@ -38,7 +38,7 @@ const Sidebar = () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user?.email) {
-          const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${user.email}`);
+          const response = await fetch(`https://user-service-p40l.onrender.com/api/usuarios/by-email/${user.email}`);
           if (response.ok) {
             const userData = await response.json();
             setIsAdmin(userData.rol?.toLowerCase() === 'administrador');

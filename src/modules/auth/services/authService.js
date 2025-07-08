@@ -10,7 +10,7 @@ import { supabase } from '../../../supabaseClient';
 export const register = async (email, userData) => {
   try {
     // Step 1: Register user in your backend database
-    const backendResponse = await fetch('http://localhost:8080/api/usuarios', {
+    const backendResponse = await fetch('https://user-service-p40l.onrender.com/api/usuarios', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -66,7 +66,7 @@ export const register = async (email, userData) => {
 export const login = async (email) => {
   try {
     // Check if the email exists in backend
-    const checkEmailResponse = await fetch(`http://localhost:8080/api/usuarios/check-email?email=${encodeURIComponent(email)}`, {
+    const checkEmailResponse = await fetch(`https://user-service-p40l.onrender.com/api/usuarios/check-email?email=${encodeURIComponent(email)}`, {
       method: 'GET'
     });
 
@@ -78,7 +78,7 @@ export const login = async (email) => {
     const { error } = await supabase.auth.signInWithOtp({
       email: email,
       options: {
-        emailRedirectTo: 'http://localhost:5173/principal',
+        emailRedirectTo: 'https://proyectovercel-one.vercel.app/principal',
         shouldCreateUser: false
       }
     });

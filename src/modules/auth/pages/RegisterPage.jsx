@@ -41,7 +41,7 @@ const RegisterPage = () => {
 
         const { data: userResponse } = await supabase.auth.getUser();
         if (userResponse?.user) {
-          const response = await fetch(`http://localhost:8080/api/usuarios/by-email/${userResponse.user.email}`);
+          const response = await fetch(`https://user-service-p40l.onrender.com/api/usuarios/by-email/${userResponse.user.email}`);
           if (response.ok) {
             const userData = await response.json();
             const userIsAdmin = userData.rol?.toLowerCase() === 'administrador';

@@ -1,6 +1,6 @@
 // src/services/incidentService.js
 
-const BASE_URL = 'http://localhost:8082/api/incidents';
+const BASE_URL = 'https://incident-service-rlrr.onrender.com/api/incidents';
 const BASE_URL_HISTORIAL = `${BASE_URL}/historial`;
 
 export const obtenerIncidentes = async () => {
